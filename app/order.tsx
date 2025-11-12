@@ -1,11 +1,12 @@
-// app/(tabs)/home.tsx
+// app/order.tsx
 import { router } from 'expo-router';
 import React from 'react';
-import { Product } from '../../lib/firebase';
-import { HomeScreen } from '../../screens/HomeScreen';
+import { Product } from '../lib/firebase';
+import { OrderScreen } from '../screens/OrderScreen';
 
-export default function Home() {
-  const handleNavigateToDishDetail = (dish: Product) => {
+export default function Order() {
+  const handleSelectDish = (dish: Product) => {
+    // Navegar al detalle del plato pasando todos los datos necesarios
     router.push({
       pathname: '/dish-detail',
       params: {
@@ -22,11 +23,9 @@ export default function Home() {
   };
 
   return (
-    <HomeScreen
-      onNavigateToOrder={() => router.push('/order')}
-      onNavigateToReserve={() => router.push('/')}
-      onNavigateToCart={() => router.push('/(tabs)/cart')}
-      onNavigateToDishDetail={handleNavigateToDishDetail}
+    <OrderScreen
+      onNavigateBack={() => router.back()}
+      onSelectDish={handleSelectDish}
     />
   );
 }

@@ -3,13 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface BottomNavProps {
   currentScreen: 'home' | 'offers' | 'cart' | 'profile';
+  cartItemCount?: number; // ← AGREGADO
 }
 
-export function BottomNav({ currentScreen }: BottomNavProps) {
+export function BottomNav({ currentScreen, cartItemCount = 0 }: BottomNavProps) { // ← AGREGADO
   return (
     <LinearGradient
       colors={['#FEC901', '#F47A00']}
@@ -21,7 +22,7 @@ export function BottomNav({ currentScreen }: BottomNavProps) {
         {/* Home Button */}
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => router.push('../(tabs)/home')}
+          onPress={() => router.push('/(tabs)/home')}
           activeOpacity={0.7}
         >
           <View
@@ -37,7 +38,7 @@ export function BottomNav({ currentScreen }: BottomNavProps) {
         {/* Offers Button */}
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => router.push('../(tabs)/offers')}
+          onPress={() => router.push('/(tabs)/offers')}
           activeOpacity={0.7}
         >
           <View
@@ -50,10 +51,10 @@ export function BottomNav({ currentScreen }: BottomNavProps) {
           </View>
         </TouchableOpacity>
 
-        {/* Cart Button */}
+        {/* Cart Button CON BADGE */}
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => router.push('../(tabs)/cart')}
+          onPress={() => router.push('/(tabs)/cart')}
           activeOpacity={0.7}
         >
           <View
@@ -63,13 +64,21 @@ export function BottomNav({ currentScreen }: BottomNavProps) {
             ]}
           >
             <Ionicons name="cart" size={20} color="#fff" />
+            {/* ← AGREGADO: Badge del carrito */}
+            {cartItemCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
 
         {/* Profile Button */}
         <TouchableOpacity
           style={styles.navButton}
-          onPress={() => router.push('../(tabs)/profile')}
+          onPress={() => router.push('/(tabs)/profile')}
           activeOpacity={0.7}
         >
           <View
@@ -111,8 +120,29 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative', // ← AGREGADO para el badge
   },
   iconContainerActive: {
     backgroundColor: '#000',
+  },
+  // ← AGREGADO: Estilos del badge
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#F97316',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: 'bold',
   },
 });

@@ -108,6 +108,17 @@ export interface Reservation {
   updatedAt: number;
 }
 
+export interface CartItem {
+  productId: string;
+  restaurantId: string;
+  quantity: number;
+  addedAt: number;
+}
+
+export interface CartItemWithProduct extends CartItem {
+  product?: Product;
+}
+
 // ============================================
 // FUNCIONES DE AUTENTICACIÓN
 // ============================================
@@ -608,5 +619,135 @@ export const updateReservationStatus = async (reservationId: string, restaurantI
   } catch (error: any) {
     console.error('Error updating reservation status:', error);
     return { success: false, error: error.message };
+  }
+};
+
+// ============================================
+// FUNCIONES PARA CARRITO DE COMPRAS
+// ============================================
+
+// Agregar producto al carrito
+export const addToCart = async (userId: string, productId: string, restaurantId: string, quantity: number = 1) => {
+  try {
+    const productResult = await getProductById(productId, restaurantId);
+    if (!productResult.success) {
+      return { success: false, error: 'Producto no encontrado' };
+    }
+
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `cart/${userId}/${productId}`));
+    
+    if (snapshot.exists()) {
+      const currentQuantity = snapshot.val().quantity;
+      await update(ref(database), {
+        [`cart/${userId}/${productId}/quantity`]: currentQuantity + quantity
+      });
+    } else {
+      await set(ref(database, `cart/${userId}/${productId}`), {
+        productId,
+        restaurantId,
+        quantity,
+        addedAt: Date.now()
+      });
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error adding to cart:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Obtener carrito del usuario
+export const getCart = async (userId: string) => {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `cart/${userId}`));
+    
+    if (snapshot.exists()) {
+      const cartItems: CartItem[] = [];
+      snapshot.forEach((childSnapshot) => {
+        cartItems.push(childSnapshot.val());
+      });
+      return { success: true, cartItems };
+    }
+    return { success: true, cartItems: [] };
+  } catch (error: any) {
+    console.error('Error getting cart:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Actualizar cantidad en carrito
+export const updateCartItemQuantity = async (userId: string, productId: string, quantity: number) => {
+  try {
+    if (quantity <= 0) {
+      return await removeFromCart(userId, productId);
+    }
+    
+    await update(ref(database), {
+      [`cart/${userId}/${productId}/quantity`]: quantity
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating cart item:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Eliminar producto del carrito
+export const removeFromCart = async (userId: string, productId: string) => {
+  try {
+    await remove(ref(database, `cart/${userId}/${productId}`));
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error removing from cart:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Limpiar carrito completo
+export const clearCart = async (userId: string) => {
+  try {
+    await remove(ref(database, `cart/${userId}`));
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error clearing cart:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Obtener items del carrito con información de productos
+export const getCartItems = async (userId: string) => {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `cart/${userId}`));
+    
+    if (snapshot.exists()) {
+      const cartItems: CartItemWithProduct[] = [];
+      
+      const promises: Promise<void>[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const cartItem = childSnapshot.val() as CartItem;
+        const promise = getProductById(cartItem.productId, cartItem.restaurantId).then((productResult) => {
+          if (productResult.success && productResult.product) {
+            cartItems.push({
+              ...cartItem,
+              product: productResult.product
+            });
+          }
+        });
+        promises.push(promise);
+      });
+      
+      await Promise.all(promises);
+      return { success: true, items: cartItems };
+    }
+    
+    return { success: true, items: [] };
+  } catch (error: any) {
+    console.error('Error getting cart items:', error);
+    return { success: false, error: error.message, items: [] };
   }
 };

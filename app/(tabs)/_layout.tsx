@@ -8,14 +8,15 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          display: 'none', // Ocultamos el tab bar porque usamos BottomNav personalizado
+          display: 'none',
         },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: '',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -24,7 +25,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="offers"
         options={{
-          title: 'Ofertas',
+          title: '',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="flame" size={size} color={color} />
           ),
@@ -33,7 +35,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Carrito',
+          title: '',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart" size={size} color={color} />
           ),
@@ -42,7 +45,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: '',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

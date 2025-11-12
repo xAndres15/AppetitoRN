@@ -12,20 +12,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BottomNav } from '../components/BottomNav'; // ← Un solo ../
-import { ImageWithFallback } from '../components/ImageWithFallback'; // ← Un solo ../
-import { useHomeViewModel } from '../viewmodels/HomeViewModel'; // ← Un solo ../
+import { BottomNav } from '../components/BottomNav';
+import { ImageWithFallback } from '../components/ImageWithFallback';
+import { Product } from '../lib/firebase';
+import { useHomeViewModel } from '../viewmodels/HomeViewModel';
 
 const { width } = Dimensions.get('window');
 
 interface HomeScreenProps {
   onNavigateToOrder: () => void;
   onNavigateToReserve: () => void;
+  onNavigateToCart?: () => void; // ← AGREGADO
+  onNavigateToDishDetail?: (dish: Product) => void; // ← AGREGAR ESTA LÍNEA
 }
 
 export function HomeScreen({
   onNavigateToOrder,
   onNavigateToReserve,
+  onNavigateToCart, // ← AGREGADO
+  onNavigateToDishDetail, // ← AGREGAR ESTA LÍNEA
 }: HomeScreenProps) {
   const {
     loading,
@@ -34,6 +39,7 @@ export function HomeScreen({
     restaurantName,
     popularItems,
     formatPrice,
+    cartItemCount, // ← AGREGADO
   } = useHomeViewModel();
 
   return (
@@ -65,20 +71,15 @@ export function HomeScreen({
                 onChangeText={setSearchQuery}
                 style={styles.searchInput}
               />
-              <Ionicons
-                name="star"
-                size={20}
-                color="#9CA3AF"
-                style={styles.starIcon}
-              />
             </View>
 
+            {/* Botón de notificaciones CON BADGE DEL CARRITO */}
             {/* Botón de notificaciones */}
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications" size={24} color="#374151" />
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationText}>1</Text>
-              </View>
+            <TouchableOpacity 
+                  style={styles.notificationButton}
+                  onPress={onNavigateToCart}
+>
+                  <Ionicons name="notifications" size={24} color="#374151" />
             </TouchableOpacity>
           </View>
         </View>
@@ -140,27 +141,32 @@ export function HomeScreen({
                 </View>
               ))
             ) : popularItems.length > 0 ? (
-              popularItems.map((item) => (
-                <View key={item.id} style={styles.productCard}>
+                popularItems.map((item) => (
+              <TouchableOpacity
+                 key={item.id}
+                 style={styles.productCard}
+                 onPress={() => onNavigateToDishDetail && onNavigateToDishDetail(item)}
+                 activeOpacity={0.7}
+              >
                   <View style={styles.productImageContainer}>
-                    <ImageWithFallback
-                      source={{ uri: item.image }}
-                      style={styles.productImage}
-                    />
+                   <ImageWithFallback
+                    source={{ uri: item.image }}
+                   style={styles.productImage}
+                 />
                   </View>
-                  <View style={styles.productInfo}>
-                    <Text style={styles.productName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.productPrice}>
-                      {formatPrice(item.price)}
-                    </Text>
-                    <Text style={styles.restaurantName} numberOfLines={1}>
-                      {restaurantName}
-                    </Text>
-                  </View>
-                </View>
-              ))
+                    <View style={styles.productInfo}>
+                   <Text style={styles.productName} numberOfLines={1}>
+                   {item.name}
+                   </Text>
+                  <Text style={styles.productPrice}>
+                   {formatPrice(item.price)}
+                   </Text>
+                   <Text style={styles.restaurantName} numberOfLines={1}>
+                   {restaurantName}
+                   </Text>
+                   </View>
+                  </TouchableOpacity>
+                  ))
             ) : (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
@@ -175,7 +181,10 @@ export function HomeScreen({
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <BottomNav currentScreen="home" />
+      <BottomNav 
+        currentScreen="home"
+        cartItemCount={cartItemCount} // ← AGREGADO
+      />
     </View>
   );
 }
@@ -249,22 +258,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  notificationBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    backgroundColor: '#EF4444',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   scrollView: {
     flex: 1,
   },
@@ -292,86 +285,86 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   popularSection: {
-  marginBottom: 20,
-},
-popularHeader: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-  marginBottom: 16,
-},
-popularTitle: {
-  color: '#1F2937',
-  fontSize: 18,
-  fontWeight: '600',
-},
-popularEmoji: {
-  fontSize: 20,
-},
-productsGrid: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 12,
-  justifyContent: 'flex-start',
-},
-productCard: {
-  width: (width - 48) / 3,
-  backgroundColor: '#fff',
-  borderRadius: 12,
-  overflow: 'hidden',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 2,
-  marginBottom: 12,
-},
-productImageContainer: {
-  width: '100%',
-  aspectRatio: 1,
-},
-productImage: {
-  width: '100%',
-  height: '100%',
-},
-productImageSkeleton: {
-  width: '100%',
-  aspectRatio: 1,
-  backgroundColor: '#E5E7EB',
-},
-productInfo: {
-  padding: 8,
-},
-productName: {
-  color: '#1F2937',
-  fontSize: 12,           // ← Reducido de 14 a 12
-  marginBottom: 4,
-  fontWeight: '500',
-},
-productPrice: {
-  color: '#EF4444',
-  fontSize: 13,           // ← Reducido de 14 a 13
-  fontWeight: '600',
-  marginBottom: 4,
-},
-restaurantName: {
-  color: '#6B7280',
-  fontSize: 11,           // ← Reducido de 12 a 11
-},
-skeletonLine: {
-  height: 12,
-  backgroundColor: '#E5E7EB',
-  borderRadius: 4,
-  marginBottom: 8,
-},
-emptyContainer: {
-  width: '100%',
-  paddingVertical: 32,
-  alignItems: 'center',
-},
-emptyText: {
-  color: '#6B7280',
-  fontSize: 14,
-  textAlign: 'center',
-},
+    marginBottom: 20,
+  },
+  popularHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  popularTitle: {
+    color: '#1F2937',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  popularEmoji: {
+    fontSize: 20,
+  },
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start',
+  },
+  productCard: {
+    width: (width - 48) / 3,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 12,
+  },
+  productImageContainer: {
+    width: '100%',
+    aspectRatio: 1,
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  productImageSkeleton: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  productInfo: {
+    padding: 8,
+  },
+  productName: {
+    color: '#1F2937',
+    fontSize: 12,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  productPrice: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  restaurantName: {
+    color: '#6B7280',
+    fontSize: 11,
+  },
+  skeletonLine: {
+    height: 12,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  emptyContainer: {
+    width: '100%',
+    paddingVertical: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#6B7280',
+    fontSize: 14,
+    textAlign: 'center',
+  },
 });

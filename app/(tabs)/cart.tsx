@@ -1,31 +1,21 @@
 // app/(tabs)/cart.tsx
+import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { CartScreen } from '../../screens/CartScreen';
+import { CartItem } from '../../viewmodels/CartViewModel';
 
 export default function Cart() {
+  const handleCheckout = (subtotal: number, items: CartItem[]) => {
+    // Por ahora solo mostramos el total
+    console.log('Ir a checkout con:', subtotal, items);
+    // Cuando tengas el CheckoutScreen:
+    // router.push({ pathname: '/checkout', params: { subtotal } });
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Carrito de Compras</Text>
-      <Text style={styles.subtext}>Próximamente...</Text>
-    </View>
+    <CartScreen
+      onNavigateBack={() => router.back()}
+      onNavigateToCheckout={handleCheckout}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  subtext: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-});
