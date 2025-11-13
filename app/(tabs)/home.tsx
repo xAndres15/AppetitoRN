@@ -24,7 +24,7 @@ export default function Home() {
   return (
     <HomeScreen
       onNavigateToOrder={() => router.push('/order')}
-      onNavigateToReserve={() => router.push('/')}
+      onNavigateToReserve={() => router.push('/reserve')} 
       onNavigateToCart={() => router.push('/(tabs)/cart')}
       onNavigateToDishDetail={handleNavigateToDishDetail}
     />

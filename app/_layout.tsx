@@ -73,6 +73,35 @@ export default function RootLayout() {
             presentation: 'card',
           }} 
         />
+        {/* ← AGREGAR ESTAS DOS RUTAS */}
+        <Stack.Screen 
+          name="reserve" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+        <Stack.Screen 
+          name="restaurant-detail" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen 
+          name="make-reservation" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+        <Stack.Screen 
+          name="reservation-confirmation" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
       </Stack>
       <StatusBar style="light" />
     </ThemeProvider>
