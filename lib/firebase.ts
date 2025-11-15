@@ -616,7 +616,14 @@ export const getProductById = async (productId: string, restaurantId: string) =>
     const dbRef = ref(database);
     const snapshot = await get(child(dbRef, `restaurants/${restaurantId}/products/${productId}`));
     if (snapshot.exists()) {
-      return { success: true, product: snapshot.val() };
+      return { 
+        success: true, 
+        product: {
+          id: productId, // ← AGREGAR ESTA LÍNEA (CRÍTICO)
+          restaurantId: restaurantId, // ← AGREGAR ESTA LÍNEA
+          ...snapshot.val()
+        } 
+      };
     }
     return { success: false, error: 'Producto no encontrado' };
   } catch (error: any) {

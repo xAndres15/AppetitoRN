@@ -3,15 +3,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { BottomNav } from '../components/BottomNav';
 import { ImageWithFallback } from '../components/ImageWithFallback';
@@ -320,6 +320,12 @@ const renderFavoritosTab = () => (
                 params: {
                   dishId: favorite.dishId,
                   restaurantId: favorite.restaurantId,
+                  name: favorite.dishName || '',           // ← AGREGAR
+                  price: String(favorite.dishPrice || 0),  // ← AGREGAR
+                  image: favorite.dishImage || '',         // ← AGREGAR
+                  category: favorite.dishCategory || '',   // ← AGREGAR
+                  description: 'Delicioso plato preparado con los mejores ingredientes', // ← AGREGAR (valor por defecto)
+                  available: 'true',                       // ← AGREGAR
                 },
               });
             }}
