@@ -26,7 +26,6 @@ export const ReservationService = {
       
       return { success: false, error: 'No se pudieron cargar los restaurantes' };
     } catch (error: any) {
-      console.error('Error in ReservationService.getRestaurants:', error);
       return { success: false, error: error.message || 'Error al cargar restaurantes' };
     }
   },
@@ -45,17 +44,18 @@ export const ReservationService = {
 
       return { success: false, error: 'No se pudieron cargar los datos del usuario' };
     } catch (error: any) {
-      console.error('Error in ReservationService.getUserData:', error);
       return { success: false, error: error.message || 'Error al cargar datos del usuario' };
     }
   },
 
-  async createReservation(reservationData: any, restaurantId: string) {
+  async createReservation(
+    reservationData: any, 
+    restaurantId: string
+  ): Promise<{ success: boolean; reservationId?: string; error?: string }> {
     try {
       const result = await createReservation(reservationData, restaurantId);
       return result;
     } catch (error: any) {
-      console.error('Error in ReservationService.createReservation:', error);
       return { success: false, error: error.message || 'Error al crear la reserva' };
     }
   },

@@ -31,7 +31,7 @@ export function useMakeReservationViewModel(restaurant: Restaurant) {
         setPhone(result.data.phone || '');
       }
     } catch (error: any) {
-      console.error('Error loading user data:', error);
+      // Error silencioso, no afecta la experiencia del usuario
     } finally {
       setIsLoadingUserData(false);
     }
@@ -65,72 +65,78 @@ export function useMakeReservationViewModel(restaurant: Restaurant) {
     return true;
   };
 
- // En viewmodels/MakeReservationViewModel.ts
-// Asegúrate de que el handleSubmit tenga este return:
-
-const handleSubmit = async () => {
-  if (!validateForm()) return { success: false };
-
-  const user = auth.currentUser;
-  if (!user) {
-    Alert.alert('Error', 'Debes iniciar sesión para hacer una reserva');
-    return { success: false };
-  }
-
-  if (!restaurant.firebaseId) {
-    Alert.alert('Error', 'Error: Restaurante no válido');
-    return { success: false };
-  }
-
-  setIsLoading(true);
-
-  try {
-    // Formatear la fecha para guardar (YYYY-MM-DD)
-    const dateString = date!.toISOString().split('T')[0];
-
-    const reservationData = {
-      userId: user.uid,
-      userName: name.trim(),
-      userPhone: phone.trim(),
-      userEmail: email.trim(),
-      date: dateString,
-      time: time,
-      numberOfPeople: parseInt(numberOfPeople),
-      status: 'pending' as const,
-      restaurantId: restaurant.firebaseId,
+  const handleSubmit = async (): Promise<{
+    success: boolean;
+    reservationId?: string;
+    data?: {
+      date: string;
+      time: string;
+      numberOfPeople: string;
+      name: string;
+      email: string;
+      phone: string;
     };
+  }> => {
+    if (!validateForm()) return { success: false };
 
-    const result = await ReservationService.createReservation(
-      reservationData,
-      restaurant.firebaseId
-    );
-
-    if (result.success) {
-      Alert.alert('¡Éxito!', 'Reserva creada exitosamente');
-      return { 
-        success: true, 
-        reservationId: result.reservationId,
-        data: {
-          date: dateString,
-          time,
-          numberOfPeople,
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-        }
-      };
-    } else {
-      Alert.alert('Error', result.error || 'Error al crear la reserva');
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Error', 'Debes iniciar sesión para hacer una reserva');
       return { success: false };
     }
-  } catch (error: any) {
-    console.error('Error creating reservation:', error);
-    Alert.alert('Error', error.message || 'Error al crear la reserva');
-    return { success: false };
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+    if (!restaurant.firebaseId) {
+      Alert.alert('Error', 'Error: Restaurante no válido');
+      return { success: false };
+    }
+
+    setIsLoading(true);
+
+    try {
+      const dateString = date!.toISOString().split('T')[0];
+
+      const reservationData = {
+        userId: user.uid,
+        userName: name.trim(),
+        userPhone: phone.trim(),
+        userEmail: email.trim(),
+        date: dateString,
+        time: time,
+        numberOfPeople: parseInt(numberOfPeople),
+        status: 'pending' as const,
+        restaurantId: restaurant.firebaseId,
+      };
+
+      const result = await ReservationService.createReservation(
+        reservationData,
+        restaurant.firebaseId
+      );
+
+      if (result.success) {
+        Alert.alert('¡Éxito!', 'Reserva creada exitosamente');
+        return { 
+          success: true, 
+          reservationId: result.reservationId || undefined,
+          data: {
+            date: dateString,
+            time,
+            numberOfPeople,
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+          }
+        };
+      } else {
+        Alert.alert('Error', result.error || 'Error al crear la reserva');
+        return { success: false };
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Error al crear la reserva');
+      return { success: false };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const timeOptions = [
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00',

@@ -1,3 +1,4 @@
+// app/login.tsx
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -5,7 +6,6 @@ import React, { useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
-    Image,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -13,7 +13,8 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import { loginUser, resetPassword } from "../lib/firebase";
+import { ImageWithFallback } from "../components/ImageWithFallback";
+import { resetPassword, signInUser } from "../lib/firebase"; // ← CAMBIADO
 
 const { width } = Dimensions.get("window");
 
@@ -28,11 +29,11 @@ export default function Login() {
         if (!email || !password) return alert("Completa todos los campos");
         
         setIsLoading(true);
-        const result = await loginUser(email, password);
+        const result = await signInUser(email, password); // ← CAMBIADO
         
         if (result.success) {
             alert("Bienvenido a Appetito");
-            router.replace("/(tabs)/home"); // ← CAMBIADO AQUÍ
+            router.replace("/(tabs)/home");
         } else {
             alert("Error: " + result.error);
         }
@@ -62,7 +63,7 @@ export default function Login() {
             <SafeAreaView style={styles.safe}>
                 {/* HEADER CON FONDO BLANCO REDONDEADO */}
                 <View style={styles.header}>
-                    <Image
+                    <ImageWithFallback
                         source={require("../assets/images/appetitoLogo.png")}
                         style={styles.logo}
                         resizeMode="contain"

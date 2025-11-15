@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { child, get, getDatabase, push, ref, remove, set, update } from 'firebase/database';
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyA_6S4H6na3hxR-5x85E4Zg8q6Wkhbzm6o",
   authDomain: "appetito-project.firebaseapp.com",
@@ -216,6 +217,191 @@ export const getUserData = async (uid: string) => {
 };
 
 // ============================================
+// 🆕 FUNCIONES NUEVAS PARA PERFIL
+// ============================================
+
+// Actualizar perfil de usuario
+export async function updateUserProfile(
+  userId: string,
+  profileData: {
+    name: string;
+    lastName: string;
+    phone: string;
+    address: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await update(ref(database, `users/${userId}`), {
+      name: profileData.name,
+      lastName: profileData.lastName,
+      phone: profileData.phone,
+      address: profileData.address,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Error al actualizar perfil' };
+  }
+}
+
+// ============================================
+// 🆕 FUNCIONES PARA FAVORITOS
+// ============================================
+
+// Agregar restaurante a favoritos
+export async function addFavorite(
+  userId: string,
+  restaurantData: {
+    restaurantId: string;
+    restaurantName: string;
+    restaurantImage: string;
+    restaurantCategory: string;
+    restaurantRating?: number;
+    restaurantReviews?: number;
+    restaurantDistance?: string;
+    restaurantDeliveryTime?: string;
+    firebaseId?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await set(ref(database, `users/${userId}/favorites/${restaurantData.restaurantId}`), {
+      ...restaurantData,
+      userId,
+      createdAt: Date.now(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Remover restaurante de favoritos
+export async function removeFavorite(
+  userId: string,
+  restaurantId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await remove(ref(database, `users/${userId}/favorites/${restaurantId}`));
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Obtener favoritos del usuario
+export async function getUserFavorites(
+  userId: string
+): Promise<{ success: boolean; favorites?: any[]; error?: string }> {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `users/${userId}/favorites`));
+
+    if (snapshot.exists()) {
+      const favoritesData = snapshot.val();
+      const favorites = Object.keys(favoritesData).map((key) => ({
+        id: key,
+        ...favoritesData[key],
+      }));
+      return { success: true, favorites };
+    }
+    return { success: true, favorites: [] };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Verificar si un restaurante está en favoritos
+export async function isFavorite(
+  userId: string,
+  restaurantId: string
+): Promise<{ success: boolean; isFavorite: boolean }> {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `users/${userId}/favorites/${restaurantId}`));
+    return { success: true, isFavorite: snapshot.exists() };
+  } catch (error: any) {
+    return { success: false, isFavorite: false };
+  }
+}
+// ==================== FAVORITOS DE PLATOS ====================
+
+export async function addDishFavorite(
+  userId: string,
+  dishData: {
+    dishId: string;
+    dishName: string;
+    dishImage: string;
+    dishCategory: string;
+    dishPrice: number;
+    restaurantId: string;
+    restaurantName: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await set(ref(database, `users/${userId}/dishFavorites/${dishData.dishId}`), {
+      ...dishData,
+      userId,
+      createdAt: Date.now(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function removeDishFavorite(
+  userId: string,
+  dishId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await remove(ref(database, `users/${userId}/dishFavorites/${dishId}`));
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getUserDishFavorites(
+  userId: string
+): Promise<{ success: boolean; favorites?: any[]; error?: string }> {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `users/${userId}/dishFavorites`));
+
+    if (snapshot.exists()) {
+      const favoritesData = snapshot.val();
+      const favorites = Object.keys(favoritesData).map((key) => ({
+        id: key,
+        ...favoritesData[key],
+      }));
+      return { success: true, favorites };
+    }
+    return { success: true, favorites: [] };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function isDishFavorite(
+  userId: string,
+  dishId: string
+): Promise<{ success: boolean; isFavorite: boolean }> {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, `users/${userId}/dishFavorites/${dishId}`));
+    return { success: true, isFavorite: snapshot.exists() };
+  } catch (error: any) {
+    return { success: false, isFavorite: false };
+  }
+}
+// ============================================
+// 🆕 ALIAS PARA COMPATIBILIDAD CON NUEVO CÓDIGO
+// ============================================
+export const signInUser = loginUser;
+export const signUpUser = registerUser;
+export const signOutUser = logoutUser;
+
+// ============================================
 // FUNCIONES PARA RESTAURANTES
 // ============================================
 
@@ -228,7 +414,10 @@ export const getAllRestaurants = async () => {
     if (snapshot.exists()) {
       const restaurants: Restaurant[] = [];
       snapshot.forEach((childSnapshot) => {
-        restaurants.push(childSnapshot.val());
+        restaurants.push({
+          id: childSnapshot.key, // ← DEBE ESTAR ESTA LÍNEA
+          ...childSnapshot.val()
+        });
       });
       return { success: true, restaurants };
     }
@@ -345,7 +534,10 @@ export const getProducts = async (restaurantId?: string) => {
       if (snapshot.exists()) {
         const products: Product[] = [];
         snapshot.forEach((childSnapshot) => {
-          products.push(childSnapshot.val());
+          products.push({
+            id: childSnapshot.key, // ← AGREGAR ESTO
+            ...childSnapshot.val()
+          });
         });
         return { success: true, products };
       }
@@ -374,14 +566,44 @@ export const getProducts = async (restaurantId?: string) => {
 };
 
 // Obtener productos disponibles
+
 export const getAvailableProducts = async (restaurantId?: string) => {
   try {
-    const result = await getProducts(restaurantId);
-    if (result.success && result.products) {
-      const availableProducts = result.products.filter(p => p.available);
-      return { success: true, products: availableProducts };
+    if (restaurantId) {
+      const dbRef = ref(database);
+      const snapshot = await get(child(dbRef, `restaurants/${restaurantId}/products`));
+      
+      if (snapshot.exists()) {
+        const products: Product[] = [];
+        snapshot.forEach((childSnapshot) => {
+          const product = childSnapshot.val();
+          if (product.available) {
+            products.push({
+              id: childSnapshot.key, // ← CRÍTICO: Incluir el ID
+              ...product
+            });
+          }
+        });
+        return { success: true, products };
+      }
+      return { success: true, products: [] };
+    } else {
+      // Obtener productos de todos los restaurantes
+      const restaurantsResult = await getAllRestaurants();
+      if (!restaurantsResult.success || !restaurantsResult.restaurants) {
+        return { success: true, products: [] };
+      }
+      
+      const allProducts: Product[] = [];
+      for (const restaurant of restaurantsResult.restaurants) {
+        const result = await getAvailableProducts(restaurant.id!);
+        if (result.success && result.products) {
+          allProducts.push(...result.products);
+        }
+      }
+      
+      return { success: true, products: allProducts };
     }
-    return result;
   } catch (error: any) {
     console.error('Error getting available products:', error);
     return { success: false, error: error.message };
@@ -437,27 +659,53 @@ export const deleteProduct = async (productId: string, restaurantId: string) => 
 // ============================================
 
 // Crear orden
-export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>, restaurantId: string) => {
+export async function createOrder(orderData: {
+  userId: string;
+  restaurantId: string;
+  restaurantName: string;
+  restaurantImage?: string;
+  items: any[];
+  subtotal: number;
+  deliveryFee: number;
+  tip: number;
+  total: number;
+  deliveryAddress: string;
+  deliveryTime?: string;
+  paymentMethod: string;
+  status: string;
+  notes?: string;
+  userName: string;
+  userPhone: string;
+}): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
-    const ordersRef = ref(database, `restaurants/${restaurantId}/orders`);
+    // Guardar en la colección general de pedidos
+    const ordersRef = ref(database, 'orders');
     const newOrderRef = push(ordersRef);
-    const orderId = newOrderRef.key;
-    
-    const order: Order = {
+
+    const orderToSave = {
       ...orderData,
-      id: orderId!,
-      restaurantId: restaurantId,
+      id: newOrderRef.key,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
-    
-    await set(newOrderRef, order);
-    return { success: true, orderId, order };
+
+    await set(newOrderRef, orderToSave);
+
+    // También guardar en los pedidos del restaurante
+    const restaurantOrderRef = ref(
+      database,
+      `restaurants/${orderData.restaurantId}/orders/${newOrderRef.key}`
+    );
+    await set(restaurantOrderRef, orderToSave);
+
+    return { success: true, orderId: newOrderRef.key || undefined };
   } catch (error: any) {
-    console.error('Error creating order:', error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message || 'Error al crear pedido',
+    };
   }
-};
+}
 
 // Obtener todas las órdenes
 export const getAllOrders = async (restaurantId?: string) => {
@@ -499,19 +747,31 @@ export const getAllOrders = async (restaurantId?: string) => {
 };
 
 // Obtener órdenes de un usuario
-export const getUserOrders = async (userId: string) => {
+export async function getUserOrders(
+  userId: string
+): Promise<{ success: boolean; orders?: any[]; error?: string }> {
   try {
-    const result = await getAllOrders();
-    if (result.success && result.orders) {
-      const userOrders = result.orders.filter(order => order.userId === userId);
-      return { success: true, orders: userOrders };
+    const ordersRef = ref(database, 'orders');
+    const snapshot = await get(ordersRef);
+
+    if (snapshot.exists()) {
+      const ordersData = snapshot.val();
+      const orders = Object.keys(ordersData)
+        .map((key) => ({
+          id: key,
+          ...ordersData[key],
+        }))
+        .filter((order) => order.userId === userId);
+
+      orders.sort((a, b) => b.createdAt - a.createdAt);
+      return { success: true, orders };
     }
-    return result;
+
+    return { success: true, orders: [] };
   } catch (error: any) {
-    console.error('Error getting user orders:', error);
     return { success: false, error: error.message };
   }
-};
+}
 
 // Actualizar estado de orden
 export const updateOrderStatus = async (orderId: string, restaurantId: string, status: Order['status']) => {
@@ -534,19 +794,26 @@ export const updateOrderStatus = async (orderId: string, restaurantId: string, s
 // Crear reservación
 export const createReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'updatedAt'>, restaurantId: string) => {
   try {
-    const reservationsRef = ref(database, `restaurants/${restaurantId}/reservations`);
-    const newReservationRef = push(reservationsRef);
-    const reservationId = newReservationRef.key;
+    // Guardar SOLO en la colección PRINCIPAL de reservas
+    const reservationsMainRef = ref(database, 'reservations');
+    const newReservationMainRef = push(reservationsMainRef);
+    const reservationId = newReservationMainRef.key;
     
     const reservation: Reservation = {
       ...reservationData,
       id: reservationId!,
-      restaurantId: restaurantId,
+      restaurantId: restaurantId, // Ya viene del parámetro
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
     
-    await set(newReservationRef, reservation);
+    // Guardar en /reservations (colección principal)
+    await set(newReservationMainRef, reservation);
+    
+    // TAMBIÉN guardar en /restaurants/{restaurantId}/reservations
+    const restaurantReservationRef = ref(database, `restaurants/${restaurantId}/reservations/${reservationId}`);
+    await set(restaurantReservationRef, reservation);
+    
     return { success: true, reservationId, reservation };
   } catch (error: any) {
     console.error('Error creating reservation:', error);
@@ -594,19 +861,31 @@ export const getAllReservations = async (restaurantId?: string) => {
 };
 
 // Obtener reservaciones de un usuario
-export const getUserReservations = async (userId: string) => {
+export async function getUserReservations(
+  userId: string
+): Promise<{ success: boolean; reservations?: any[]; error?: string }> {
   try {
-    const result = await getAllReservations();
-    if (result.success && result.reservations) {
-      const userReservations = result.reservations.filter(res => res.userId === userId);
-      return { success: true, reservations: userReservations };
+    const reservationsRef = ref(database, 'reservations');
+    const snapshot = await get(reservationsRef);
+
+    if (snapshot.exists()) {
+      const reservationsData = snapshot.val();
+      const reservations = Object.keys(reservationsData)
+        .map((key) => ({
+          id: key,
+          ...reservationsData[key],
+        }))
+        .filter((reservation) => reservation.userId === userId);
+
+      reservations.sort((a, b) => b.createdAt - a.createdAt);
+      return { success: true, reservations };
     }
-    return result;
+
+    return { success: true, reservations: [] };
   } catch (error: any) {
-    console.error('Error getting user reservations:', error);
     return { success: false, error: error.message };
   }
-};
+}
 
 // Actualizar estado de reservación
 export const updateReservationStatus = async (reservationId: string, restaurantId: string, status: Reservation['status']) => {
@@ -750,4 +1029,5 @@ export const getCartItems = async (userId: string) => {
     console.error('Error getting cart items:', error);
     return { success: false, error: error.message, items: [] };
   }
+  
 };

@@ -1,31 +1,26 @@
 // app/(tabs)/profile.tsx
+import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ProfileScreen } from '../../screens/ProfileScreen';
 
 export default function Profile() {
+  const handleNavigateToRestaurant = (restaurantId: string) => {
+    // Navegar al detalle del restaurante desde favoritos
+    router.push({
+      pathname: '/restaurant-detail' as any,
+      params: {
+        id: restaurantId,
+        // Aquí deberías pasar todos los datos del restaurante
+        // Por ahora solo pasamos el ID
+      },
+    });
+  };
+  
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Perfil de Usuario</Text>
-      <Text style={styles.subtext}>Próximamente...</Text>
-    </View>
+    <ProfileScreen
+      onNavigateBack={() => router.back()}
+      onNavigateToRestaurant={handleNavigateToRestaurant}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  subtext: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-});

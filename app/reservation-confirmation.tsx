@@ -12,35 +12,60 @@ export default function ReservationConfirmation() {
     return value || '';
   };
 
-  // Validar que tenemos los parámetros necesarios
-  if (!params.date || !params.time || !params.numberOfPeople) {
+  // CASO 1: Viene desde el formulario (tiene todos los datos)
+  if (params.date && params.time && params.numberOfPeople) {
+    const reservationData = {
+      date: getParam(params.date),
+      time: getParam(params.time),
+      numberOfPeople: getParam(params.numberOfPeople),
+      name: getParam(params.name),
+      email: getParam(params.email),
+      phone: getParam(params.phone),
+      restaurantName: getParam(params.restaurantName),
+      restaurantLocation: getParam(params.restaurantLocation),
+      reservationId: getParam(params.reservationId),
+    };
+
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          Error: Datos de la reserva incompletos
-        </Text>
-      </View>
+      <ReservationConfirmationScreen
+        reservationData={reservationData}
+        onNavigateBack={() => router.back()}
+        onNavigateHome={() => router.push('/(tabs)/home')}
+      />
     );
   }
 
-  const reservationData = {
-    date: getParam(params.date),
-    time: getParam(params.time),
-    numberOfPeople: getParam(params.numberOfPeople),
-    name: getParam(params.name),
-    email: getParam(params.email),
-    phone: getParam(params.phone),
-    restaurantName: getParam(params.restaurantName),
-    restaurantLocation: getParam(params.restaurantLocation),
-    reservationId: getParam(params.reservationId),
-  };
+  // CASO 2: Viene desde ProfileScreen (solo tiene IDs, debe cargar desde Firebase)
+  if (params.reservationId && params.restaurantId) {
+    const reservationData = {
+      reservationId: getParam(params.reservationId),
+      restaurantId: getParam(params.restaurantId),
+      date: '',
+      time: '',
+      numberOfPeople: '0',
+      name: '',
+      email: '',
+      phone: '',
+      restaurantName: '',
+      restaurantLocation: '',
+    };
 
+    return (
+      <ReservationConfirmationScreen
+        reservationData={reservationData}
+        onNavigateBack={() => router.back()}
+        onNavigateHome={() => router.push('/(tabs)/home')}
+      />
+    );
+  }
+
+  // ERROR: No tiene ni los datos del formulario ni los IDs
   return (
-    <ReservationConfirmationScreen
-      reservationData={reservationData}
-      onNavigateBack={() => router.back()}
-      onNavigateHome={() => router.push('/(tabs)/home')}
-    />
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorText}>
+        Error: Datos de la reserva incompletos
+      </Text>
+    </View>
   );
 }
 

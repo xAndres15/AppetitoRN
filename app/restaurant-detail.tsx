@@ -14,18 +14,20 @@ export default function RestaurantDetail() {
     return value || '';
   };
 
-  // Validar que tenemos los parámetros necesarios
-  if (!params.id || !params.name) {
+  // Solo validar que tenemos el ID
+  if (!params.id) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          Error: Información del restaurante incompleta
+          Error: ID del restaurante no proporcionado
         </Text>
       </View>
     );
   }
 
-  // Parsear el schedule
+  const restaurantId = getParam(params.id);
+
+  // Parsear el schedule si existe
   let schedule: { day: string; hours: string }[] = [];
   try {
     const scheduleParam = getParam(params.schedule);
@@ -36,15 +38,16 @@ export default function RestaurantDetail() {
     console.error('Error parsing schedule:', error);
   }
 
-  // Reconstruir el objeto restaurant desde los parámetros
+  // Crear el objeto restaurant con los datos disponibles
+  // Si faltan datos, RestaurantDetailViewModel los cargará desde Firebase
   const restaurant: Restaurant = {
-    id: getParam(params.id),
-    firebaseId: getParam(params.id),
-    name: getParam(params.name),
-    description: getParam(params.description),
-    location: getParam(params.location),
-    image: getParam(params.image),
-    phone: getParam(params.phone),
+    id: restaurantId,
+    firebaseId: restaurantId,
+    name: getParam(params.name) || '', // Puede estar vacío
+    description: getParam(params.description) || '',
+    location: getParam(params.location) || '',
+    image: getParam(params.image) || '',
+    phone: getParam(params.phone) || '',
     schedule: schedule.length > 0 ? schedule : undefined,
   };
 
@@ -82,4 +85,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-});
+}); 

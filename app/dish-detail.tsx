@@ -8,32 +8,35 @@ import { DishDetailScreen } from '../screens/DishDetailScreen';
 export default function DishDetail() {
   const params = useLocalSearchParams();
   
-  // Función helper para obtener string desde params
   const getParam = (value: string | string[] | undefined): string => {
     if (Array.isArray(value)) return value[0] || '';
     return value || '';
   };
 
-  // Validar que tenemos todos los parámetros necesarios
-  if (!params.id || !params.name) {
+  const dishId = getParam(params.id || params.dishId);
+  const restaurantId = getParam(params.restaurantId);
+  
+  if (!dishId || !restaurantId) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error: Información del producto incompleta</Text>
+        <Text style={styles.errorText}>
+          Error: ID del plato o restaurante no proporcionado
+        </Text>
       </View>
     );
   }
 
-  // Reconstruir el objeto dish desde los parámetros
-  const dish = {
-    id: getParam(params.id),
-    name: getParam(params.name),
-    description: getParam(params.description),
+  const dish: Product = {
+    id: dishId,
+    name: getParam(params.name) || '',
+    description: getParam(params.description) || '',
     price: Number(getParam(params.price)) || 0,
-    image: getParam(params.image),
-    category: getParam(params.category),
-    restaurantId: getParam(params.restaurantId),
-    available: getParam(params.available) === 'true',
-  } as Product;
+    image: getParam(params.image) || '',
+    category: getParam(params.category) || '',
+    restaurantId: restaurantId,
+    available: getParam(params.available) !== 'false',
+    createdAt: Number(getParam(params.createdAt)) || Date.now(),
+  };
 
   return (
     <DishDetailScreen

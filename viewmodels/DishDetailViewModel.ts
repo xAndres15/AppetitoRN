@@ -1,12 +1,78 @@
 // viewmodels/DishDetailViewModel.ts
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { addToCart, auth, Product } from '../lib/firebase';
+import { addDishFavorite, addToCart, auth, isDishFavorite, Product, removeDishFavorite } from '../lib/firebase';
 
 export function useDishDetailViewModel(dish: Product) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteState, setIsFavoriteState] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(true);
+
+  useEffect(() => {
+    checkIfFavorite();
+  }, [dish.id]);
+
+  const checkIfFavorite = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user || !dish.id) {
+        setCheckingFavorite(false);
+        return;
+      }
+
+      const result = await isDishFavorite(user.uid, dish.id);
+      if (result.success) {
+        setIsFavoriteState(result.isFavorite);
+      }
+    } catch (error) {
+      // Error silencioso
+    } finally {
+      setCheckingFavorite(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Error', 'Debes iniciar sesiÃ³n para agregar favoritos');
+        return;
+      }
+
+      if (!dish.id) {
+        Alert.alert('Error', 'InformaciÃ³n del plato incompleta');
+        return;
+      }
+
+      if (isFavoriteState) {
+        // Remover de favoritos
+        const result = await removeDishFavorite(user.uid, dish.id);
+        if (result.success) {
+          setIsFavoriteState(false);
+          Alert.alert('Ã‰xito', 'Plato eliminado de favoritos');
+        }
+      } else {
+        // Agregar a favoritos
+        const result = await addDishFavorite(user.uid, {
+          dishId: dish.id,
+          dishName: dish.name,
+          dishImage: dish.image,
+          dishCategory: dish.category,
+          dishPrice: dish.price,
+          restaurantId: dish.restaurantId,
+          restaurantName: 'Appetito',
+        });
+        
+        if (result.success) {
+          setIsFavoriteState(true);
+          Alert.alert('Ã‰xito', 'Plato agregado a favoritos');
+        }
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Error al actualizar favoritos');
+    }
+  };
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -18,28 +84,22 @@ export function useDishDetailViewModel(dish: Product) {
     }
   };
 
-  const toggleFavorite = () => {
-    setIsFavorite(prev => !prev);
-    // Aquí puedes agregar la lógica para guardar en favoritos en Firebase
-  };
-
   const handleAddToCart = async () => {
     const user = auth.currentUser;
     
     if (!user) {
-      Alert.alert('Error', 'Debes iniciar sesión para agregar al carrito');
+      Alert.alert('Error', 'Debes iniciar sesiÃ³n para agregar al carrito');
       return { success: false };
     }
 
     if (!dish.id || !dish.restaurantId) {
-      Alert.alert('Error', 'Información del producto incompleta');
+      Alert.alert('Error', 'InformaciÃ³n del producto incompleta');
       return { success: false };
     }
 
     setIsAddingToCart(true);
 
     try {
-      // Agregar cada unidad según la cantidad seleccionada
       for (let i = 0; i < quantity; i++) {
         const result = await addToCart(user.uid, dish.id, dish.restaurantId);
         if (!result.success) {
@@ -49,7 +109,7 @@ export function useDishDetailViewModel(dish: Product) {
         }
       }
 
-      Alert.alert('Éxito', `${quantity} producto${quantity > 1 ? 's' : ''} agregado${quantity > 1 ? 's' : ''} al carrito`);
+      Alert.alert('Ã‰xito', `${quantity} producto${quantity > 1 ? 's' : ''} agregado${quantity > 1 ? 's' : ''} al carrito`);
       return { success: true };
     } catch (error: any) {
       console.error('Error adding to cart:', error);
@@ -61,7 +121,6 @@ export function useDishDetailViewModel(dish: Product) {
   };
 
   const formatPrice = (price: number) => {
-    // Convertir a string y agregar puntos como separador de miles
     const priceStr = Math.floor(price).toString();
     const formatted = priceStr.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `$ ${formatted}`;
@@ -75,11 +134,12 @@ export function useDishDetailViewModel(dish: Product) {
     quantity,
     incrementQuantity,
     decrementQuantity,
-    isFavorite,
+    isFavorite: isFavoriteState,
     toggleFavorite,
     handleAddToCart,
     formatPrice,
     calculateTotalPrice,
     isAddingToCart,
+    checkingFavorite,
   } as const;
 }

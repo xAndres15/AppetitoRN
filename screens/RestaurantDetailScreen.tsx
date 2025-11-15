@@ -3,14 +3,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    Dimensions,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Restaurant } from '../models/Reservation';
@@ -33,6 +34,7 @@ export function RestaurantDetailScreen({
     restaurantData,
     isLoading,
     isFavorite,
+    checkingFavorite,
     toggleFavorite,
     getSchedule,
     getPhone,
@@ -47,7 +49,6 @@ export function RestaurantDetailScreen({
 
   const handleSocialPress = (platform: string) => {
     // Lógica para abrir redes sociales
-    console.log(`Opening ${platform}`);
   };
 
   return (
@@ -110,12 +111,17 @@ export function RestaurantDetailScreen({
             style={styles.favoriteButton}
             onPress={toggleFavorite}
             activeOpacity={0.8}
+            disabled={checkingFavorite}
           >
-            <Ionicons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={24}
-              color={isFavorite ? '#EF4444' : '#374151'}
-            />
+            {checkingFavorite ? (
+              <ActivityIndicator size="small" color="#F97316" />
+            ) : (
+              <Ionicons
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={24}
+                color={isFavorite ? '#EF4444' : '#374151'}
+              />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -158,7 +164,7 @@ export function RestaurantDetailScreen({
               onPress={() => handleSocialPress('tiktok')}
               activeOpacity={0.7}
             >
-              <Ionicons name="musical-notes" size={20} color="#fff" />
+              <Ionicons name="logo-tiktok" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>

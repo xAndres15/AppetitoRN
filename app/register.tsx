@@ -1,12 +1,12 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Checkbox from "../components/Checkbox";
 import { registerUser } from "../lib/firebase";
@@ -28,7 +28,7 @@ export default function Register() {
   };
 
   const handleRegister = async () => {
-    if (!acceptTerms) return alert("Debes aceptar los términos y condiciones");
+    if (!acceptTerms) return alert("Debes aceptar los tÃ©rminos y condiciones");
     if (!form.nombre || !form.apellido || !form.email || !form.password)
       return alert("Completa todos los campos obligatorios");
 
@@ -40,10 +40,10 @@ export default function Register() {
     });
 
     if (result.success) {
-      alert("✅ Cuenta creada");
+      alert("âœ… Cuenta creada");
       router.push("/login");
     } else {
-      alert("❌ Error: " + result.error);
+      alert("âŒ Error: " + result.error);
     }
   };
 
@@ -67,28 +67,28 @@ export default function Register() {
         />
 
         <TextInput
-          placeholder="Correo electrónico"
+          placeholder="Correo electrÃ³nico"
           style={styles.input}
           value={form.email}
           onChangeText={(v) => handleChange("email", v)}
         />
 
         <TextInput
-          placeholder="Número de celular"
+          placeholder="NÃºmero de celular"
           style={styles.input}
           value={form.telefono}
           onChangeText={(v) => handleChange("telefono", v)}
         />
 
         <TextInput
-          placeholder="Dirección"
+          placeholder="DirecciÃ³n"
           style={styles.input}
           value={form.direccion}
           onChangeText={(v) => handleChange("direccion", v)}
         />
 
         <TextInput
-          placeholder="Contraseña"
+          placeholder="ContraseÃ±a"
           secureTextEntry
           style={styles.input}
           value={form.password}
@@ -97,7 +97,7 @@ export default function Register() {
 
         <View style={styles.checkboxRow}>
           <Checkbox value={acceptTerms} onValueChange={setAcceptTerms} />
-          <Text style={styles.checkboxLabel}>Términos y condiciones</Text>
+          <Text style={styles.checkboxLabel}>TÃ©rminos y condiciones</Text>
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
@@ -106,9 +106,9 @@ export default function Register() {
       </View>
 
       <Text style={styles.loginText}>
-        ¿Ya tienes cuenta?{" "}
+        Â¿Ya tienes cuenta?{" "}
         <Text style={styles.link} onPress={() => router.push("/login")}>
-          Iniciar sesión
+          Iniciar sesiÃ³n
         </Text>
       </Text>
     </ScrollView>

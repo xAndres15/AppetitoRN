@@ -3,13 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Product } from '../lib/firebase';
@@ -38,12 +38,10 @@ export function DishDetailScreen({
     formatPrice,
     calculateTotalPrice,
     isAddingToCart,
+    checkingFavorite,
   } = useDishDetailViewModel(dish);
 
-  const description =
-    dish.description || 'Delicioso plato preparado con los mejores ingredientes';
-
-  const onAddToCartPress = async () => {
+  const handleAddToCartPress = async () => {
     const result = await handleAddToCart();
     if (result.success) {
       onAddToCart();
@@ -52,7 +50,7 @@ export function DishDetailScreen({
 
   return (
     <View style={styles.container}>
-      {/* Header con gradiente */}
+      {/* Header naranja */}
       <LinearGradient
         colors={['#FEC901', '#F47A00']}
         start={{ x: 0, y: 0 }}
@@ -60,150 +58,126 @@ export function DishDetailScreen({
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <View style={styles.searchRow}>
-            {/* Botón Back */}
-            <TouchableOpacity
-              onPress={onNavigateBack}
-              style={styles.backButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={28} color="#fff" />
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onNavigateBack}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={28} color="#1F2937" />
+          </TouchableOpacity>
 
-            {/* Barra de búsqueda */}
-            <View style={styles.searchContainer}>
-              <Ionicons
-                name="search"
-                size={20}
-                color="#9CA3AF"
-                style={styles.searchIcon}
-              />
-              <TextInput
-                placeholder="Buscar"
-                placeholderTextColor="#9CA3AF"
-                style={styles.searchInput}
-                editable={false}
-              />
-            </View>
-
-            {/* Botón de notificaciones */}
-            {/* Botón de notificaciones */}
-            <TouchableOpacity style={styles.notificationButton}>
-                <Ionicons name="notifications" size={24} color="#374151" />
-            </TouchableOpacity>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+            <TextInput
+              placeholder="Buscar"
+              placeholderTextColor="#9CA3AF"
+              style={styles.searchInput}
+              editable={false}
+            />
           </View>
+
+          <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
+            <Ionicons name="notifications" size={24} color="#374151" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      {/* Contenido principal */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Card contenedor */}
-        <View style={styles.contentCard}>
-          {/* Imagen del plato */}
+      {/* Contenido scrolleable */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Imagen del plato */}
+        <View style={styles.imageWrapper}>
           <View style={styles.imageContainer}>
-            <ImageWithFallback
-              source={{ uri: dish.image }}
-              style={styles.dishImage}
-            />
-            {/* Botón de favoritos */}
+            <ImageWithFallback source={{ uri: dish.image }} style={styles.image} />
+            
+            {/* Botón de favorito sobre la imagen */}
             <TouchableOpacity
-              style={styles.favoriteButton}
               onPress={toggleFavorite}
-              activeOpacity={0.8}
+              style={styles.favoriteButton}
+              activeOpacity={0.7}
+              disabled={checkingFavorite}
             >
               <Ionicons
                 name={isFavorite ? 'heart' : 'heart-outline'}
-                size={24}
-                color={isFavorite ? '#EF4444' : '#374151'}
+                size={28}
+                color="#EF4444"
               />
             </TouchableOpacity>
           </View>
+        </View>
 
-          {/* Información del plato */}
-          <View style={styles.infoSection}>
-            <View style={styles.dishHeader}>
-              <View style={styles.dishTitleContainer}>
-                <Text style={styles.dishName}>{dish.name}</Text>
-                <Text style={styles.restaurantName}>Appetito</Text>
-              </View>
-              <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={16} color="#F59E0B" />
-                <Text style={styles.ratingText}>4.5</Text>
-              </View>
+        {/* Card blanca con información */}
+        <View style={styles.infoCard}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{dish.name}</Text>
+            <View style={styles.ratingBadge}>
+              <Ionicons name="star" size={18} color="#F59E0B" />
+              <Text style={styles.rating}>4.5</Text>
             </View>
+          </View>
 
-            <Text style={styles.description}>{description}</Text>
+          <Text style={styles.restaurant}>Appetito</Text>
+          <Text style={styles.description}>{dish.description}</Text>
 
-            {/* Categoría */}
-            {dish.category && (
-              <View style={styles.categoryContainer}>
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{dish.category}</Text>
-                </View>
-              </View>
-            )}
-
-            {/* Selector de cantidad */}
-            <View style={styles.quantitySection}>
-              <Text style={styles.quantityLabel}>Cantidad</Text>
-              <View style={styles.quantityControls}>
-                <TouchableOpacity
-                  onPress={decrementQuantity}
-                  disabled={quantity <= 1}
-                  style={[
-                    styles.quantityButton,
-                    styles.decreaseButton,
-                    quantity <= 1 && styles.quantityButtonDisabled,
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="remove" size={20} color="#374151" />
-                </TouchableOpacity>
-
-                <Text style={styles.quantityText}>{quantity}</Text>
-
-                <TouchableOpacity
-                  onPress={incrementQuantity}
-                  style={[styles.quantityButton, styles.increaseButton]}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
+          {dish.category && (
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{dish.category}</Text>
             </View>
+          )}
 
-            {/* Precio y botón de agregar */}
-            <View style={styles.footer}>
-              <View style={styles.priceContainer}>
-                <Text style={styles.priceLabel}>Total</Text>
-                <Text style={styles.price}>{formatPrice(calculateTotalPrice())}</Text>
-              </View>
-
+          {/* Cantidad */}
+          <View style={styles.quantitySection}>
+            <Text style={styles.sectionTitle}>Cantidad</Text>
+            <View style={styles.quantityControls}>
               <TouchableOpacity
-                onPress={onAddToCartPress}
-                disabled={isAddingToCart}
-                style={styles.addToCartButton}
-                activeOpacity={0.9}
+                onPress={decrementQuantity}
+                style={styles.quantityButton}
+                activeOpacity={0.7}
               >
-                <LinearGradient
-                  colors={['#FEC901', '#F47A00']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.addToCartGradient}
-                >
-                  <Ionicons name="cart" size={20} color="#fff" />
-                  <Text style={styles.addToCartText}>
-                    {isAddingToCart ? 'Agregando...' : 'Añadir al carrito'}
-                  </Text>
-                </LinearGradient>
+                <Ionicons name="remove" size={24} color="#374151" />
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity
+                onPress={incrementQuantity}
+                style={styles.quantityButtonAdd}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Separador */}
+          <View style={styles.separator} />
+
+          {/* Total y botón */}
+          <View style={styles.footer}>
+            <View>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalPrice}>{formatPrice(calculateTotalPrice())}</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleAddToCartPress}
+              style={styles.addButton}
+              activeOpacity={0.9}
+              disabled={isAddingToCart}
+            >
+              <LinearGradient
+                colors={['#FEC901', '#F47A00']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addButtonGradient}
+              >
+                <Ionicons name="cart" size={20} color="#fff" />
+                <Text style={styles.addButtonText}>
+                  {isAddingToCart ? 'Agregando...' : 'Añadir al carrito'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
@@ -215,22 +189,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 16,
   },
   headerContent: {
-    paddingHorizontal: 16,
-  },
-  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
     gap: 12,
   },
   backButton: {
     width: 40,
-    height: 48,
+    height: 40,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'flex-start',
   },
   searchContainer: {
     flex: 1,
@@ -239,12 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 24,
     height: 48,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingHorizontal: 16,
   },
   searchIcon: {
     marginRight: 8,
@@ -261,192 +228,175 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  notificationDot: {
-    width: '100%',
-    height: '100%',
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  contentCard: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+  imageWrapper: {
+    padding: 16,
   },
   imageContainer: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1.2,
+    borderRadius: 24,
+    overflow: 'hidden',
     position: 'relative',
   },
-  dishImage: {
+  image: {
     width: '100%',
     height: '100%',
   },
   favoriteButton: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 44,
-    height: 44,
+    top: 16,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#fff',
-    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  infoSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+  infoCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  dishHeader: {
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  dishTitleContainer: {
+  title: {
     flex: 1,
-  },
-  dishName: {
-    color: '#1F2937',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
+    color: '#1F2937',
+    marginRight: 12,
   },
-  restaurantName: {
-    color: '#6B7280',
-    fontSize: 14,
-  },
-  ratingContainer: {
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  ratingText: {
-    color: '#92400E',
+  rating: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#92400E',
+    marginLeft: 4,
+  },
+  restaurant: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
   },
   description: {
-    color: '#4B5563',
     fontSize: 14,
+    color: '#4B5563',
     lineHeight: 20,
     marginBottom: 16,
   },
-  categoryContainer: {
-    marginBottom: 20,
-  },
   categoryBadge: {
+    alignSelf: 'flex-start',
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
+    borderRadius: 12,
+    marginBottom: 20,
   },
   categoryText: {
-    color: '#92400E',
     fontSize: 12,
-    fontWeight: '600',
+    color: '#92400E',
+    fontWeight: '500',
   },
   quantitySection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  quantityLabel: {
-    color: '#1F2937',
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#1F2937',
     marginBottom: 12,
   },
   quantityControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20,
   },
   quantityButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  decreaseButton: {
-    backgroundColor: '#F3F4F6',
-  },
-  increaseButton: {
+  quantityButtonAdd: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F97316',
-  },
-  quantityButtonDisabled: {
-    opacity: 0.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quantityText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#1F2937',
-    fontSize: 20,
-    fontWeight: 'bold',
-    minWidth: 40,
+    minWidth: 30,
     textAlign: 'center',
   },
+  separator: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 20,
+  },
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  priceContainer: {
-    marginBottom: 16,
-  },
-  priceLabel: {
+  totalLabel: {
+    fontSize: 12,
     color: '#6B7280',
-    fontSize: 14,
     marginBottom: 4,
   },
-  price: {
-    color: '#EF4444',
-    fontSize: 24,
+  totalPrice: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#EF4444',
   },
-  addToCartButton: {
-    borderRadius: 24,
+  addButton: {
+    flex: 1,
+    marginLeft: 16,
+    borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  addToCartGradient: {
+  addButtonGradient: {
     flexDirection: 'row',
-    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 14,
     gap: 8,
   },
-  addToCartText: {
+  addButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });

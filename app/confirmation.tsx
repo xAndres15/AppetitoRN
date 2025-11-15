@@ -9,6 +9,8 @@ export default function Confirmation() {
 
   const orderId = params.orderId as string;
   const restaurantId = params.restaurantId as string;
+  
+  // Si vienen los parámetros completos (desde checkout)
   const subtotal = Number(params.subtotal) || 0;
   const deliveryFee = Number(params.deliveryFee) || 0;
   const tip = Number(params.tip) || 0;
@@ -24,7 +26,8 @@ export default function Confirmation() {
     console.error('Error parsing items:', error);
   }
 
-  if (!orderId || !restaurantId || items.length === 0) {
+  // Validación mínima - solo requiere orderId y restaurantId
+  if (!orderId || !restaurantId) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error: Datos del pedido incompletos</Text>
