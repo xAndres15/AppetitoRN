@@ -683,7 +683,7 @@ export async function createOrder(orderData: {
   notes?: string;
   userName: string;
   userPhone: string;
-}): Promise<{ success: boolean; orderId?: string; error?: string }> {
+}, restaurantId: string): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
     // Guardar en la colección general de pedidos
     const ordersRef = ref(database, 'orders');

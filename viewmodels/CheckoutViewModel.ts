@@ -77,87 +77,90 @@ export function useCheckoutViewModel(subtotal: number) {
     return true;
   };
 
-  const handleConfirmOrder = async () => {
-    if (!validateOrder()) return { success: false };
+const handleConfirmOrder = async () => {
+  if (!validateOrder()) return { success: false };
 
-    const user = auth.currentUser;
-    if (!user) {
-      Alert.alert('Error', 'Debes iniciar sesión');
-      return { success: false };
-    }
+  const user = auth.currentUser;
+  if (!user) {
+    Alert.alert('Error', 'Debes iniciar sesión');
+    return { success: false };
+  }
 
-    setIsProcessing(true);
+  setIsProcessing(true);
 
-    try {
-      const deliveryFee = calculateDeliveryFee();
-      const tip = calculateTip();
-      const total = calculateTotal();
+  try {
+    const deliveryFee = calculateDeliveryFee();
+    const tip = calculateTip();
+    const total = calculateTotal();
 
-      // Obtener datos del usuario
-      const userDataResult = await getUserData(user.uid);
-      const userData = userDataResult.success ? userDataResult.data : null;
+    // Obtener datos del usuario
+    const userDataResult = await getUserData(user.uid);
+    const userData = userDataResult.success ? userDataResult.data : null;
 
-      // Obtener el restaurantId y los items del carrito
-      const cartResult = await getCartItems(user.uid);
-      if (!cartResult.success || !cartResult.items || cartResult.items.length === 0) {
-        Alert.alert('Error', 'El carrito está vacío');
-        setIsProcessing(false);
-        return { success: false };
-      }
-
-      const restaurantId = cartResult.items[0].restaurantId;
-
-      // Construir los items de la orden
-      const orderItems = cartResult.items.map(item => ({
-        productId: item.productId,
-        productName: item.product?.name || 'Producto',
-        quantity: item.quantity,
-        price: item.product?.price || 0,
-      }));
-
-      // Crear el objeto de orden
-      const orderData: any = {
-        userId: user.uid,
-        userName: userData?.name || user.displayName || user.email || 'Usuario',
-        userPhone: userData?.phone || '',
-        items: orderItems,
-        total: total,
-        subtotal: subtotal,
-        deliveryFee: deliveryFee,
-        tip: tip,
-        status: 'pending',
-        deliveryAddress: deliveryAddress,
-        paymentMethod: paymentMethod,
-        deliveryTime: deliveryTime === 'express' ? '15-20 min' : '30-45 min',
-      };
-
-      // Solo agregar notes si tiene contenido
-      if (notes.trim()) {
-        orderData.notes = notes.trim();
-      }
-
-      const result = await createOrder(orderData, restaurantId);
-
-      if (result.success) {
-        await clearCart(user.uid);
-        Alert.alert('¡Pedido confirmado!', 'Tu pedido ha sido creado exitosamente');
-        return { 
-          success: true, 
-          orderId: result.orderId,
-          restaurantId: restaurantId
-        };
-      } else {
-        Alert.alert('Error', result.error || 'Error al crear el pedido');
-        return { success: false };
-      }
-    } catch (error: any) {
-      console.error('Error creating order:', error);
-      Alert.alert('Error', error.message || 'Error al procesar el pedido');
-      return { success: false };
-    } finally {
+    // Obtener el restaurantId y los items del carrito
+    const cartResult = await getCartItems(user.uid);
+    if (!cartResult.success || !cartResult.items || cartResult.items.length === 0) {
+      Alert.alert('Error', 'El carrito está vacío');
       setIsProcessing(false);
+      return { success: false };
     }
-  };
+
+    const restaurantId = cartResult.items[0].restaurantId;
+
+    // Construir los items de la orden
+    const orderItems = cartResult.items.map(item => ({
+      productId: item.productId,
+      productName: item.product?.name || 'Producto',
+      quantity: item.quantity,
+      price: item.product?.price || 0,
+    }));
+
+    // Crear el objeto de orden
+    const orderData: any = {
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email || 'Usuario',
+      userPhone: userData?.phone || '',
+      restaurantId: restaurantId,
+      restaurantName: 'Big Bros',
+      restaurantImage: '',
+      items: orderItems,
+      total: total,
+      subtotal: subtotal,
+      deliveryFee: deliveryFee,
+      tip: tip,
+      status: 'pending',
+      deliveryAddress: deliveryAddress,
+      paymentMethod: paymentMethod,
+      deliveryTime: deliveryTime === 'express' ? '15-20 min' : '30-45 min',
+    };
+
+    // Solo agregar notes si tiene contenido
+    if (notes.trim()) {
+      orderData.notes = notes.trim();
+    }
+
+    const result = await createOrder(orderData, restaurantId);
+
+    if (result.success) {
+      await clearCart(user.uid);
+      Alert.alert('¡Pedido confirmado!', 'Tu pedido ha sido creado exitosamente');
+      return { 
+        success: true, 
+        orderId: result.orderId,
+        restaurantId: restaurantId
+      };
+    } else {
+      Alert.alert('Error', result.error || 'Error al crear el pedido');
+      return { success: false };
+    }
+  } catch (error: any) {
+    console.error('Error creating order:', error);
+    Alert.alert('Error', error.message || 'Error al procesar el pedido');
+    return { success: false };
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return {
     deliveryAddress,
