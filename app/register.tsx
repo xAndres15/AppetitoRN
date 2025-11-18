@@ -1,3 +1,4 @@
+// app/register.tsx
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -28,7 +29,7 @@ export default function Register() {
   };
 
   const handleRegister = async () => {
-    if (!acceptTerms) return alert("Debes aceptar los tÃ©rminos y condiciones");
+    if (!acceptTerms) return alert("Debes aceptar los términos y condiciones");
     if (!form.nombre || !form.apellido || !form.email || !form.password)
       return alert("Completa todos los campos obligatorios");
 
@@ -40,10 +41,10 @@ export default function Register() {
     });
 
     if (result.success) {
-      alert("âœ… Cuenta creada");
+      alert("✓ Cuenta creada");
       router.push("/login");
     } else {
-      alert("âŒ Error: " + result.error);
+      alert("✗ Error: " + result.error);
     }
   };
 
@@ -67,28 +68,31 @@ export default function Register() {
         />
 
         <TextInput
-          placeholder="Correo electrÃ³nico"
+          placeholder="Correo electrónico"
           style={styles.input}
           value={form.email}
           onChangeText={(v) => handleChange("email", v)}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <TextInput
-          placeholder="NÃºmero de celular"
+          placeholder="Número de celular"
           style={styles.input}
           value={form.telefono}
           onChangeText={(v) => handleChange("telefono", v)}
+          keyboardType="phone-pad"
         />
 
         <TextInput
-          placeholder="DirecciÃ³n"
+          placeholder="Dirección"
           style={styles.input}
           value={form.direccion}
           onChangeText={(v) => handleChange("direccion", v)}
         />
 
         <TextInput
-          placeholder="ContraseÃ±a"
+          placeholder="Contraseña"
           secureTextEntry
           style={styles.input}
           value={form.password}
@@ -97,7 +101,7 @@ export default function Register() {
 
         <View style={styles.checkboxRow}>
           <Checkbox value={acceptTerms} onValueChange={setAcceptTerms} />
-          <Text style={styles.checkboxLabel}>TÃ©rminos y condiciones</Text>
+          <Text style={styles.checkboxLabel}>Términos y condiciones</Text>
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
@@ -106,9 +110,9 @@ export default function Register() {
       </View>
 
       <Text style={styles.loginText}>
-        Â¿Ya tienes cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Text style={styles.link} onPress={() => router.push("/login")}>
-          Iniciar sesiÃ³n
+          Iniciar sesión
         </Text>
       </Text>
     </ScrollView>
