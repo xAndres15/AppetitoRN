@@ -36,7 +36,7 @@ export default function AdminOrders() {
     <AdminOrdersScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onNavigateToReservations={() => router.push('/')}
+      onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/')}
       onNavigateToStatistics={() => router.push('/')}
       onNavigateToSettings={() => router.push('/')}

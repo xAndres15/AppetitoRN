@@ -1,11 +1,11 @@
-// app/admin/dashboard.tsx
+// app/admin/reservations.tsx
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { auth, getUserRole } from '../../lib/firebase';
-import { AdminDashboardScreen } from '../../screens/AdminDashboardScreen';
+import { AdminReservationsScreen } from '../../screens/AdminReservationsScreen';
 
-export default function AdminDashboard() {
+export default function AdminReservations() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,19 +33,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminDashboardScreen
+    <AdminReservationsScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onLogout={async () => {
-        await auth.signOut();
-        router.replace('/login');
-      }}
       onNavigateToOrders={() => router.push('/admin/orders')}
-      onNavigateToReservations={() => router.push('/admin/reservations')}
-      onNavigateToMenu={() => router.push('/')}
-      onNavigateToStatistics={() => router.push('/')}
-      onNavigateToSettings={() => router.push('/')}
-      onNavigateToPromotions={() => router.push('/')}
+      onNavigateToMenu={() => {}} // TODO: Implementar cuando esté listo
+      onNavigateToStatistics={() => {}} // TODO: Implementar cuando esté listo
+      onNavigateToSettings={() => {}} // TODO: Implementar cuando esté listo
+      onNavigateToPromotions={() => {}} // TODO: Implementar cuando esté listo
     />
   );
 }
