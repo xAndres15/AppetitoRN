@@ -11,7 +11,11 @@ export function useLoginViewModel() {
 
   const validateEmail = (e: string) => e.includes('@');
 
-  const login = async () => {
+  const login = async (): Promise<{
+    success: boolean;
+    isAdmin: boolean;
+    restaurantId?: string;
+  }> => {
     if (!email || !password) {
       throw new Error('Por favor completa todos los campos');
     }
@@ -36,7 +40,11 @@ export function useLoginViewModel() {
         throw new Error(msg);
       }
 
-      return res.data;
+      return {
+        success: true,
+        isAdmin: res.data?.isAdmin || false,
+        restaurantId: res.data?.restaurantId
+      };
     } finally {
       setIsLoading(false);
     }

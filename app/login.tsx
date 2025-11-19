@@ -2,9 +2,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
     ActivityIndicator,
+    Alert,
     Dimensions,
     SafeAreaView,
     StyleSheet,
@@ -14,45 +15,51 @@ import {
     View
 } from "react-native";
 import { ImageWithFallback } from "../components/ImageWithFallback";
-import { resetPassword, signInUser } from "../lib/firebase"; // ← CAMBIADO
+import { useLoginViewModel } from "../viewmodels/LoginViewModel";
 
 const { width } = Dimensions.get("window");
 
 export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isResetting, setIsResetting] = useState(false);
+    const {
+        email,
+        setEmail,
+        password,
+        setPassword,
+        showPassword,
+        setShowPassword,
+        isLoading,
+        isResettingPassword,
+        login,
+        reset,
+    } = useLoginViewModel();
 
     const handleLogin = async () => {
-        if (!email || !password) return alert("Completa todos los campos");
-        
-        setIsLoading(true);
-        const result = await signInUser(email, password); // ← CAMBIADO
-        
-        if (result.success) {
-            alert("Bienvenido a Appetito");
-            router.replace("/(tabs)/home");
-        } else {
-            alert("Error: " + result.error);
-        }
-        setIsLoading(false);
-    };
-    
-    const handleReset = async () => {
-        if (!email) return alert("Ingresa tu correo primero");
-        
-        setIsResetting(true);
-        const result = await resetPassword(email);
-        
-        result.success 
-            ? alert("Correo enviado, revisa tu bandeja") 
-            : alert("Error: " + result.error);
+        try {
+            const result = await login();
             
-        setIsResetting(false); 
+            if (result.success) {
+                if (result.isAdmin) {
+                    // Redirigir al dashboard de admin
+                    router.replace("../admin/dashboard");
+                } else {
+                    // Redirigir al home de usuario
+                    router.replace("/(tabs)/home");
+                }
+            }
+        } catch (error: any) {
+            Alert.alert("Error", error.message);
+        }
     };
-    
+
+    const handleReset = async () => {
+        try {
+            await reset();
+            Alert.alert("Éxito", "Correo enviado, revisa tu bandeja");
+        } catch (error: any) {
+            Alert.alert("Error", error.message);
+        }
+    };
+
     return (
         <LinearGradient
             colors={["#FEC901", "#F47A00"]}
@@ -61,7 +68,6 @@ export default function Login() {
             style={styles.container}
         > 
             <SafeAreaView style={styles.safe}>
-                {/* HEADER CON FONDO BLANCO REDONDEADO */}
                 <View style={styles.header}>
                     <ImageWithFallback
                         source={require("../assets/images/appetitoLogo.png")}
@@ -70,11 +76,9 @@ export default function Login() {
                     />
                 </View>
                 
-                {/* TARJETA BLANCA */} 
                 <View style={styles.card}> 
                     <Text style={styles.title}>Iniciar sesión</Text>
                     
-                    {/* Campo Email */}
                     <View style={styles.inputContainer}>
                         <Ionicons name="person-outline" size={20} color="#888" style={styles.icon} />
                         <TextInput
@@ -85,10 +89,10 @@ export default function Login() {
                             onChangeText={setEmail}
                             autoCapitalize="none"
                             keyboardType="email-address"
+                            editable={!isLoading}
                         />
                     </View>
                     
-                    {/* Campo Password */}
                     <View style={styles.inputContainer}>
                         <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
                         <TextInput
@@ -97,11 +101,13 @@ export default function Login() {
                             style={styles.input}
                             value={password}
                             onChangeText={setPassword}
-                            secureTextEntry={!showPassword} 
+                            secureTextEntry={!showPassword}
+                            editable={!isLoading}
                         />
                         <TouchableOpacity
                             style={styles.iconRight}
-                            onPress={() => setShowPassword(!showPassword)} 
+                            onPress={() => setShowPassword(!showPassword)}
+                            disabled={isLoading}
                         > 
                             <Ionicons
                                 name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -111,14 +117,12 @@ export default function Login() {
                         </TouchableOpacity>
                     </View>
                     
-                    {/* Link Olvidaste tu contraseña */}
-                    <TouchableOpacity onPress={handleReset} disabled={isResetting}>
+                    <TouchableOpacity onPress={handleReset} disabled={isResettingPassword || isLoading}>
                         <Text style={styles.forgotText}>
-                            {isResetting ? "Enviando..." : "¿Olvidaste tu contraseña?"}
+                            {isResettingPassword ? "Enviando..." : "¿Olvidaste tu contraseña?"}
                         </Text>
                     </TouchableOpacity>
                     
-                    {/* Botón Iniciar sesión */}
                     <TouchableOpacity
                         style={[styles.loginButton, isLoading && { opacity: 0.7 }]}
                         onPress={handleLogin}
@@ -132,7 +136,6 @@ export default function Login() {
                     </TouchableOpacity>
                 </View>
                 
-                {/* LINKS ABAJO */}
                 <View style={styles.bottomLinks}>
                     <Text style={styles.bottomText}>
                         ¿No tienes cuenta?{" "}
@@ -153,8 +156,6 @@ export default function Login() {
 const styles = StyleSheet.create({ 
     container: { flex: 1 },
     safe: { flex: 1, alignItems: "center" },
-    
-    // Header
     header: {
         backgroundColor: "#fff",
         borderBottomLeftRadius: 200, 
@@ -164,8 +165,6 @@ const styles = StyleSheet.create({
         width: "100%", 
     }, 
     logo: { width: width * 0.45, height: width * 0.45 },
-    
-    // Tarjeta 
     card: { 
         backgroundColor: "#fff", 
         borderRadius: 20, 
@@ -180,8 +179,6 @@ const styles = StyleSheet.create({
         textAlign: "center", 
         marginBottom: 20 
     }, 
-    
-    // Inputs 
     inputContainer: { 
         flexDirection: "row", 
         alignItems: "center", 
@@ -193,8 +190,6 @@ const styles = StyleSheet.create({
     icon: { marginRight: 6 }, 
     iconRight: { position: "absolute", right: 10 }, 
     input: { flex: 1, height: 45 }, 
-    
-    // Forgot password
     forgotText: { 
         color: "#444", 
         textAlign: "right", 
@@ -202,8 +197,6 @@ const styles = StyleSheet.create({
         textDecorationLine: "underline", 
         marginBottom: 12 
     }, 
-        
-    // Botón de login
     loginButton: { 
         backgroundColor: "#dc2626",
         paddingVertical: 12,
@@ -215,8 +208,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600"
     }, 
-    
-    // Links inferiores
     bottomLinks: { marginTop: 25, alignItems: "center" },
     bottomText: { color: "#fff", fontSize: 14 }, 
     linkText: { 

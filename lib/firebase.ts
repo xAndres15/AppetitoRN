@@ -31,6 +31,8 @@ export const database = getDatabase(app);
 // INTERFACES
 // ============================================
 
+
+
 export interface Product {
   id?: string;
   name: string;
@@ -56,14 +58,27 @@ export interface Restaurant {
   createdAt: number;
 }
 
+// Interfaces
 export interface RestaurantInfo {
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  description: string;
+  name?: string;
+  description?: string;
+  location?: string;
+  address?: string;
+  image?: string;
   logo?: string;
   coverImage?: string;
+  phone?: string;
+  cuisine?: string;
+  isOpen?: boolean;
+  schedule?: {
+    day: string;
+    hours: string;
+  }[];
+  rating?: number;
+  reviews?: number;
+  priceRange?: string;
+  amenities?: string[];
+  paymentMethods?: string[];
 }
 
 export interface Order {
@@ -187,18 +202,36 @@ export const onAuthChange = (callback: (user: User | null) => void) => {
 };
 
 // Función para obtener el rol del usuario
-export const getUserRole = async (uid: string): Promise<string | null> => {
+// Función para obtener el rol del usuario
+export const getUserRole = async (uid: string): Promise<{
+  success: boolean;
+  role?: 'user' | 'admin';
+  restaurantId?: string;
+  error?: string;
+}> => {
   try {
     const dbRef = ref(database);
     const snapshot = await get(child(dbRef, `users/${uid}`));
+    
     if (snapshot.exists()) {
       const userData = snapshot.val();
-      return userData.role || 'user';
+      return {
+        success: true,
+        role: userData.role || 'user',
+        restaurantId: userData.restaurantId
+      };
     }
-    return null;
+    
+    return { 
+      success: false, 
+      error: 'Usuario no encontrado' 
+    };
   } catch (error: any) {
     console.error('Error al obtener rol del usuario:', error);
-    return null;
+    return { 
+      success: false, 
+      error: error.message 
+    };
   }
 };
 
@@ -1038,3 +1071,83 @@ export const getCartItems = async (userId: string) => {
   }
   
 };
+// ==================== ADMIN AUTH FUNCTIONS ====================
+
+export interface AdminUser {
+  uid: string;
+  email: string;
+  role: 'admin';
+  restaurantId: string;
+  name?: string;
+}
+
+/**
+ * Verificar si un usuario es administrador
+ */
+export async function isUserAdmin(userId: string): Promise<{
+  success: boolean;
+  isAdmin: boolean;
+  restaurantId?: string;
+  error?: string;
+}> {
+  try {
+    const adminRef = ref(database, `admins/${userId}`);
+    const snapshot = await get(adminRef);
+
+    if (snapshot.exists()) {
+      const adminData = snapshot.val();
+      return {
+        success: true,
+        isAdmin: true,
+        restaurantId: adminData.restaurantId,
+      };
+    }
+
+    return {
+      success: true,
+      isAdmin: false,
+    };
+  } catch (error: any) {
+    console.error('Error checking admin status:', error);
+    return {
+      success: false,
+      isAdmin: false,
+      error: error.message,
+    };
+  }
+}
+
+/**
+ * Obtener información del admin
+ */
+export async function getAdminData(userId: string): Promise<{
+  success: boolean;
+  data?: AdminUser;
+  error?: string;
+}> {
+  try {
+    const adminRef = ref(database, `admins/${userId}`);
+    const snapshot = await get(adminRef);
+
+    if (snapshot.exists()) {
+      return {
+        success: true,
+        data: {
+          uid: userId,
+          ...snapshot.val(),
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: 'Admin not found',
+    };
+  } catch (error: any) {
+    console.error('Error getting admin data:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}

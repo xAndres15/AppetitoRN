@@ -1,14 +1,22 @@
 // services/AuthService.ts
-import { loginUser, registerUser, resetPassword } from '../lib/firebase';
+import { getUserRole, loginUser, registerUser, resetPassword } from '../lib/firebase';
 
 export const AuthService = {
   async login(email: string, password: string) {
     const res = await loginUser(email, password);
-    if (res.success)
+    if (res.success && res.user) {
+      // Verificar si es admin
+      const roleResult = await getUserRole(res.user.uid);
+      
       return {
         success: true,
-        data: { email },
+        data: { 
+          email,
+          isAdmin: roleResult.role === 'admin',
+          restaurantId: roleResult.restaurantId
+        },
       };
+    }
     return { success: false, error: res.error };
   },
 

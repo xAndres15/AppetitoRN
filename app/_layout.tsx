@@ -67,13 +67,12 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-           name="confirmation" 
-           options={{ 
+          name="confirmation" 
+          options={{ 
             headerShown: false,
             presentation: 'card',
           }} 
         />
-        {/* ← AGREGAR ESTAS DOS RUTAS */}
         <Stack.Screen 
           name="reserve" 
           options={{ 
@@ -97,6 +96,13 @@ export default function RootLayout() {
         />
         <Stack.Screen 
           name="reservation-confirmation" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
+        <Stack.Screen 
+          name="admin" 
           options={{ 
             headerShown: false,
             presentation: 'card',
