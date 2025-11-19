@@ -37,8 +37,8 @@ export default function AdminReservations() {
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
       onNavigateToOrders={() => router.push('/admin/orders')}
-      onNavigateToMenu={() => {}} // TODO: Implementar cuando esté listo
-      onNavigateToStatistics={() => {}} // TODO: Implementar cuando esté listo
+      onNavigateToMenu={() => router.push('/admin/menu')} // TODO: Implementar cuando esté listo
+      onNavigateToStatistics={() => router.push('/admin/statistics')} // TODO: Implementar cuando esté listo
       onNavigateToSettings={() => {}} // TODO: Implementar cuando esté listo
       onNavigateToPromotions={() => {}} // TODO: Implementar cuando esté listo
     />

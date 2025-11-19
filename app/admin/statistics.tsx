@@ -1,11 +1,11 @@
-// app/admin/dashboard.tsx
+// app/admin/statistics.tsx
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { auth, getUserRole } from '../../lib/firebase';
-import { AdminDashboardScreen } from '../../screens/AdminDashboardScreen';
+import { AdminStatisticsScreen } from '../../screens/AdminStatisticsScreen';
 
-export default function AdminDashboard() {
+export default function AdminStatistics() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,19 +33,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminDashboardScreen
+    <AdminStatisticsScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onLogout={async () => {
-        await auth.signOut();
-        router.replace('/login');
-      }}
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
-      onNavigateToStatistics={() => router.push('/admin/statistics')}
-      onNavigateToSettings={() => router.push('/')}
-      onNavigateToPromotions={() => router.push('/')}
+      onNavigateToSettings={() => {}} // TODO: Implementar
+      onNavigateToPromotions={() => {}} // TODO: Implementar
     />
   );
 }
