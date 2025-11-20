@@ -1,17 +1,18 @@
 // screens/AdminOrdersScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AdminNavigation } from '../components/AdminNavigation';
+import { Order } from '../lib/firebase';
 import { useAdminOrdersViewModel } from '../viewmodels/AdminOrdersViewModel';
 
 interface AdminOrdersScreenProps {
@@ -22,126 +23,153 @@ interface AdminOrdersScreenProps {
   onNavigateToStatistics: () => void;
   onNavigateToSettings: () => void;
   onNavigateToPromotions: () => void;
+  onNavigateToOrderDetail?: (order: Order) => void;
 }
 
-export function AdminOrdersScreen({
-  restaurantId,
-  onNavigateBack,
-  onNavigateToReservations,
-  onNavigateToMenu,
-  onNavigateToStatistics,
-  onNavigateToSettings,
-  onNavigateToPromotions,
-}: AdminOrdersScreenProps) {
-  const {
-    restaurantName,
-    orders,
-    loading,
-    formatOrderId,
-    getStatusLabel,
-    getStatusColor,
-  } = useAdminOrdersViewModel(restaurantId);
+export interface AdminOrdersScreenRef {
+  reload: () => void;
+}
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
+export const AdminOrdersScreen = forwardRef<AdminOrdersScreenRef, AdminOrdersScreenProps>(
+  (
+    {
+      restaurantId,
+      onNavigateBack,
+      onNavigateToReservations,
+      onNavigateToMenu,
+      onNavigateToStatistics,
+      onNavigateToSettings,
+      onNavigateToPromotions,
+      onNavigateToOrderDetail,
+    },
+    ref
+  ) => {
+    const {
+      restaurantName,
+      orders,
+      loading,
+      formatOrderId,
+      getStatusLabel,
+      getStatusColor,
+      reload,
+    } = useAdminOrdersViewModel(restaurantId);
 
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-              <TextInput
-                placeholder="Buscar"
-                placeholderTextColor="#9CA3AF"
-                style={styles.searchInput}
-                editable={false}
-              />
-            </View>
+    // Exponer el método reload al componente padre
+    useImperativeHandle(ref, () => ({
+      reload,
+    }));
 
-            <View style={styles.notificationContainer}>
-              <View style={styles.notificationButton}>
-                <Ionicons name="notifications" size={24} color="#374151" />
+    return (
+      <View style={styles.container}>
+        {/* Header */}
+        <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#FFF" />
+              </TouchableOpacity>
+
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+                <TextInput
+                  placeholder="Buscar"
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.searchInput}
+                  editable={false}
+                />
               </View>
-              <View style={styles.badge} />
+
+              <View style={styles.notificationContainer}>
+                <View style={styles.notificationButton}>
+                  <Ionicons name="notifications" size={24} color="#374151" />
+                </View>
+                <View style={styles.badge} />
+              </View>
             </View>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
 
-      {/* Content */}
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <View>
-            <Text style={styles.welcomeLabel}>Bienvenido</Text>
-            <Text style={styles.restaurantName}>{restaurantName}</Text>
+        {/* Content */}
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <View>
+              <Text style={styles.welcomeLabel}>Bienvenido</Text>
+              <Text style={styles.restaurantName}>{restaurantName}</Text>
+            </View>
+            <View style={styles.topActions}>
+              <TouchableOpacity style={styles.iconButton}>
+                <Ionicons name="home" size={20} color="#374151" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>
+                <Ionicons name="settings" size={20} color="#374151" />
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.topActions}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="home" size={20} color="#374151" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>
-              <Ionicons name="settings" size={20} color="#374151" />
-            </TouchableOpacity>
+
+          {/* Navigation Tabs */}
+          <AdminNavigation
+            activeTab="orders"
+            onNavigateToOrders={() => {}}
+            onNavigateToReservations={onNavigateToReservations}
+            onNavigateToMenu={onNavigateToMenu}
+            onNavigateToStatistics={onNavigateToStatistics}
+            onNavigateToPromotions={onNavigateToPromotions}
+          />
+
+          {/* Orders List */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Pedidos actuales</Text>
+
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#F97316" />
+              </View>
+            ) : orders.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cube-outline" size={64} color="#D1D5DB" />
+                <Text style={styles.emptyTitle}>No hay pedidos</Text>
+                <Text style={styles.emptyText}>
+                  Los pedidos aparecerán aquí cuando los clientes realicen compras
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.ordersList}>
+                {orders.map((order) => (
+                  <TouchableOpacity
+                    key={order.id}
+                    style={styles.orderItem}
+                    activeOpacity={0.7}
+                    onPress={() => onNavigateToOrderDetail && onNavigateToOrderDetail(order)}
+                  >
+                    <View style={styles.orderInfo}>
+                      <Text style={styles.orderId}>
+                        Pedido ID: {formatOrderId(order.id || '')}
+                      </Text>
+                      <Text style={styles.orderUser}>{order.userName}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: getStatusColor(order.status) },
+                      ]}
+                    >
+                      <Text style={styles.statusText}>{getStatusLabel(order.status)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
-        </View>
 
-        {/* Navigation Tabs */}
-        <AdminNavigation
-          activeTab="orders"
-          onNavigateToOrders={() => {}}
-          onNavigateToReservations={onNavigateToReservations}
-          onNavigateToMenu={onNavigateToMenu}
-          onNavigateToStatistics={onNavigateToStatistics}
-          onNavigateToPromotions={onNavigateToPromotions}
-        />
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
+    );
+  }
+);
 
-        {/* Orders List */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pedidos actuales</Text>
-
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#F97316" />
-            </View>
-          ) : orders.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cube-outline" size={64} color="#D1D5DB" />
-              <Text style={styles.emptyTitle}>No hay pedidos</Text>
-              <Text style={styles.emptyText}>
-                Los pedidos aparecerán aquí cuando los clientes realicen compras
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.ordersList}>
-              {orders.map((order) => (
-                <TouchableOpacity
-                  key={order.id}
-                  style={styles.orderItem}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.orderInfo}>
-                    <Text style={styles.orderId}>Pedido ID: {formatOrderId(order.id || '')}</Text>
-                    <Text style={styles.orderUser}>{order.userName}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
-                    <Text style={styles.statusText}>{getStatusLabel(order.status)}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </View>
-  );
-}
+AdminOrdersScreen.displayName = 'AdminOrdersScreen';
 
 const styles = StyleSheet.create({
   container: {

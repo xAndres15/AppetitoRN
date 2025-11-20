@@ -30,6 +30,10 @@ export function useAdminMenuViewModel(restaurantId: string | null) {
     setLoading(false);
   };
 
+  const reload = () => {
+    loadProducts();
+  };
+
   const toggleAvailability = async (productId: string, currentAvailability: boolean) => {
     if (!restaurantId) return;
 
@@ -64,6 +68,7 @@ export function useAdminMenuViewModel(restaurantId: string | null) {
     products,
     loading,
     searchQuery,
+    reload,
     setSearchQuery,
     filteredProducts,
     formatPrice,

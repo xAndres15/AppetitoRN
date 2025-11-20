@@ -1,15 +1,15 @@
 // screens/AdminMenuScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { ImageWithFallback } from '../components/ImageWithFallback';
@@ -28,168 +28,187 @@ interface AdminMenuScreenProps {
   onNavigateToEditProduct?: (product: Product) => void;
 }
 
-export function AdminMenuScreen({
-  restaurantId,
-  onNavigateBack,
-  onNavigateToOrders,
-  onNavigateToReservations,
-  onNavigateToStatistics,
-  onNavigateToSettings,
-  onNavigateToPromotions,
-  onNavigateToAddProduct,
-  onNavigateToEditProduct,
-}: AdminMenuScreenProps) {
-  const {
-    products,
-    loading,
-    searchQuery,
-    setSearchQuery,
-    filteredProducts,
-    formatPrice,
-    toggleAvailability,
-  } = useAdminMenuViewModel(restaurantId);
+export interface AdminMenuScreenRef {
+  reload: () => void;
+}
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
+export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenProps>(
+  (
+    {
+      restaurantId,
+      onNavigateBack,
+      onNavigateToOrders,
+      onNavigateToReservations,
+      onNavigateToStatistics,
+      onNavigateToSettings,
+      onNavigateToPromotions,
+      onNavigateToAddProduct,
+      onNavigateToEditProduct,
+    },
+    ref
+  ) => {
+    const {
+      products,
+      loading,
+      searchQuery,
+      setSearchQuery,
+      filteredProducts,
+      formatPrice,
+      toggleAvailability,
+      reload,
+    } = useAdminMenuViewModel(restaurantId);
+
+    // Exponer el método reload al componente padre
+    useImperativeHandle(ref, () => ({
+      reload,
+    }));
+
+    return (
+      <View style={styles.container}>
+        {/* Header */}
+        <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#FFF" />
+              </TouchableOpacity>
+
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+                <TextInput
+                  placeholder="Buscar producto"
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+
+              <View style={styles.notificationContainer}>
+                <View style={styles.notificationButton}>
+                  <Ionicons name="notifications" size={24} color="#374151" />
+                </View>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>3</Text>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.headerTitle}>Panel de Administración</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Content */}
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Navigation Tabs */}
+          <AdminNavigation
+            activeTab="menu"
+            onNavigateToOrders={onNavigateToOrders}
+            onNavigateToReservations={onNavigateToReservations}
+            onNavigateToMenu={() => {}}
+            onNavigateToStatistics={onNavigateToStatistics}
+            onNavigateToPromotions={onNavigateToPromotions}
+          />
+
+          {/* Menu Management Header */}
+          <View style={styles.menuHeader}>
+            <Text style={styles.menuTitle}>Gestión de Menú</Text>
+            <TouchableOpacity style={styles.addButton} onPress={onNavigateToAddProduct}>
+              <Ionicons name="add" size={20} color="#FFF" />
+              <Text style={styles.addButtonText}>Agregar</Text>
             </TouchableOpacity>
-
-            <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-              <TextInput
-                placeholder="Buscar producto"
-                placeholderTextColor="#9CA3AF"
-                style={styles.searchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
-
-            <View style={styles.notificationContainer}>
-              <View style={styles.notificationButton}>
-                <Ionicons name="notifications" size={24} color="#374151" />
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>3</Text>
-              </View>
-            </View>
           </View>
 
-          <Text style={styles.headerTitle}>Panel de Administración</Text>
-        </View>
-      </LinearGradient>
+          {/* Products List */}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#F97316" />
+            </View>
+          ) : filteredProducts.length > 0 ? (
+            <View style={styles.productsList}>
+              {filteredProducts.map((product) => (
+                <View key={product.id} style={styles.productCard}>
+                  <View style={styles.productContent}>
+                    {/* Product Image */}
+                    <View style={styles.productImageContainer}>
+                      <ImageWithFallback
+                        source={{ uri: product.image }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                      />
+                    </View>
 
-      {/* Content */}
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Navigation Tabs */}
-        <AdminNavigation
-          activeTab="menu"
-          onNavigateToOrders={onNavigateToOrders}
-          onNavigateToReservations={onNavigateToReservations}
-          onNavigateToMenu={() => {}}
-          onNavigateToStatistics={onNavigateToStatistics}
-          onNavigateToPromotions={onNavigateToPromotions}
-        />
+                    {/* Product Info */}
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productName} numberOfLines={1}>
+                        {product.name}
+                      </Text>
+                      <Text style={styles.productDescription} numberOfLines={1}>
+                        {product.description}
+                      </Text>
 
-        {/* Menu Management Header */}
-        <View style={styles.menuHeader}>
-          <Text style={styles.menuTitle}>Gestión de Menú</Text>
-          <TouchableOpacity style={styles.addButton} onPress={onNavigateToAddProduct}>
-            <Ionicons name="add" size={20} color="#FFF" />
-            <Text style={styles.addButtonText}>Agregar</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Products List */}
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#F97316" />
-          </View>
-        ) : filteredProducts.length > 0 ? (
-          <View style={styles.productsList}>
-            {filteredProducts.map((product) => (
-              <View key={product.id} style={styles.productCard}>
-                <View style={styles.productContent}>
-                  {/* Product Image */}
-                  <View style={styles.productImageContainer}>
-                    <ImageWithFallback
-                      source={{ uri: product.image }}
-                      style={styles.productImage}
-                      resizeMode="cover"
-                    />
-                  </View>
-
-                  {/* Product Info */}
-                  <View style={styles.productInfo}>
-                    <Text style={styles.productName} numberOfLines={1}>
-                      {product.name}
-                    </Text>
-                    <Text style={styles.productDescription} numberOfLines={1}>
-                      {product.description}
-                    </Text>
-
-                    {/* Price and Actions */}
-                    <View style={styles.productFooter}>
-                      <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
-                      <View style={styles.productActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.availabilityButton,
-                            product.available ? styles.availableButton : styles.unavailableButton,
-                          ]}
-                          onPress={() => toggleAvailability(product.id!, product.available)}
-                        >
-                          <Text
-                            style={[
-                              styles.availabilityText,
-                              product.available
-                                ? styles.availableText
-                                : styles.unavailableText,
-                            ]}
-                          >
-                            {product.available ? 'Disponible' : 'No disponible'}
-                          </Text>
-                        </TouchableOpacity>
-
-                        {onNavigateToEditProduct && (
+                      {/* Price and Actions */}
+                      <View style={styles.productFooter}>
+                        <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
+                        <View style={styles.productActions}>
                           <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={() => onNavigateToEditProduct(product)}
+                            style={[
+                              styles.availabilityButton,
+                              product.available
+                                ? styles.availableButton
+                                : styles.unavailableButton,
+                            ]}
+                            onPress={() => toggleAvailability(product.id!, product.available)}
                           >
-                            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+                            <Text
+                              style={[
+                                styles.availabilityText,
+                                product.available
+                                  ? styles.availableText
+                                  : styles.unavailableText,
+                              ]}
+                            >
+                              {product.available ? 'Disponible' : 'No disponible'}
+                            </Text>
                           </TouchableOpacity>
-                        )}
+
+                          {onNavigateToEditProduct && (
+                            <TouchableOpacity
+                              style={styles.editButton}
+                              onPress={() => onNavigateToEditProduct(product)}
+                            >
+                              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       </View>
                     </View>
                   </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="restaurant-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>
-              {searchQuery ? 'No se encontraron productos' : 'No hay productos en el menú'}
-            </Text>
-            {!searchQuery && (
-              <TouchableOpacity style={styles.emptyButton} onPress={onNavigateToAddProduct}>
-                <Text style={styles.emptyButtonText}>Agregar primer producto</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="restaurant-outline" size={64} color="#D1D5DB" />
+              <Text style={styles.emptyTitle}>
+                {searchQuery ? 'No se encontraron productos' : 'No hay productos en el menú'}
+              </Text>
+              {!searchQuery && (
+                <TouchableOpacity style={styles.emptyButton} onPress={onNavigateToAddProduct}>
+                  <Text style={styles.emptyButtonText}>Agregar primer producto</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </View>
-  );
-}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
+    );
+  }
+);
+
+AdminMenuScreen.displayName = 'AdminMenuScreen';
 
 const styles = StyleSheet.create({
   container: {

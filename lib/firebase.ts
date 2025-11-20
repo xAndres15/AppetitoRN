@@ -11,7 +11,6 @@ import {
 } from 'firebase/auth';
 import { child, get, getDatabase, push, ref, remove, set, update } from 'firebase/database';
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyA_6S4H6na3hxR-5x85E4Zg8q6Wkhbzm6o",
   authDomain: "appetito-project.firebaseapp.com",
@@ -30,8 +29,6 @@ export const database = getDatabase(app);
 // ============================================
 // INTERFACES
 // ============================================
-
-
 
 export interface Product {
   id?: string;
@@ -58,7 +55,6 @@ export interface Restaurant {
   createdAt: number;
 }
 
-// Interfaces
 export interface RestaurantInfo {
   name?: string;
   description?: string;
@@ -201,8 +197,6 @@ export const onAuthChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
 
-// Función para obtener el rol del usuario
-// Función para obtener el rol del usuario
 export const getUserRole = async (uid: string): Promise<{
   success: boolean;
   role?: 'user' | 'admin';
@@ -235,7 +229,6 @@ export const getUserRole = async (uid: string): Promise<{
   }
 };
 
-// Función para obtener datos del usuario
 export const getUserData = async (uid: string) => {
   try {
     const dbRef = ref(database);
@@ -250,10 +243,9 @@ export const getUserData = async (uid: string) => {
 };
 
 // ============================================
-// 🆕 FUNCIONES NUEVAS PARA PERFIL
+// FUNCIONES PARA PERFIL
 // ============================================
 
-// Actualizar perfil de usuario
 export async function updateUserProfile(
   userId: string,
   profileData: {
@@ -278,10 +270,9 @@ export async function updateUserProfile(
 }
 
 // ============================================
-// 🆕 FUNCIONES PARA FAVORITOS
+// FUNCIONES PARA FAVORITOS
 // ============================================
 
-// Agregar restaurante a favoritos
 export async function addFavorite(
   userId: string,
   restaurantData: {
@@ -308,7 +299,6 @@ export async function addFavorite(
   }
 }
 
-// Remover restaurante de favoritos
 export async function removeFavorite(
   userId: string,
   restaurantId: string
@@ -321,7 +311,6 @@ export async function removeFavorite(
   }
 }
 
-// Obtener favoritos del usuario
 export async function getUserFavorites(
   userId: string
 ): Promise<{ success: boolean; favorites?: any[]; error?: string }> {
@@ -343,7 +332,6 @@ export async function getUserFavorites(
   }
 }
 
-// Verificar si un restaurante está en favoritos
 export async function isFavorite(
   userId: string,
   restaurantId: string
@@ -356,7 +344,10 @@ export async function isFavorite(
     return { success: false, isFavorite: false };
   }
 }
-// ==================== FAVORITOS DE PLATOS ====================
+
+// ============================================
+// FAVORITOS DE PLATOS
+// ============================================
 
 export async function addDishFavorite(
   userId: string,
@@ -427,8 +418,9 @@ export async function isDishFavorite(
     return { success: false, isFavorite: false };
   }
 }
+
 // ============================================
-// 🆕 ALIAS PARA COMPATIBILIDAD CON NUEVO CÓDIGO
+// ALIAS PARA COMPATIBILIDAD
 // ============================================
 export const signInUser = loginUser;
 export const signUpUser = registerUser;
@@ -438,7 +430,6 @@ export const signOutUser = logoutUser;
 // FUNCIONES PARA RESTAURANTES
 // ============================================
 
-// Obtener todos los restaurantes
 export const getAllRestaurants = async () => {
   try {
     const dbRef = ref(database);
@@ -448,7 +439,7 @@ export const getAllRestaurants = async () => {
       const restaurants: Restaurant[] = [];
       snapshot.forEach((childSnapshot) => {
         restaurants.push({
-          id: childSnapshot.key, // ← DEBE ESTAR ESTA LÍNEA
+          id: childSnapshot.key,
           ...childSnapshot.val()
         });
       });
@@ -461,7 +452,6 @@ export const getAllRestaurants = async () => {
   }
 };
 
-// Crear un nuevo restaurante
 export const createRestaurant = async (restaurantData: Omit<Restaurant, 'id' | 'createdAt'>, adminId: string) => {
   try {
     const restaurantsRef = ref(database, 'restaurants');
@@ -477,7 +467,6 @@ export const createRestaurant = async (restaurantData: Omit<Restaurant, 'id' | '
     
     await set(newRestaurantRef, restaurant);
     
-    // Asignar el restaurante al administrador
     await update(ref(database), {
       [`users/${adminId}/restaurantId`]: restaurantId
     });
@@ -489,7 +478,6 @@ export const createRestaurant = async (restaurantData: Omit<Restaurant, 'id' | '
   }
 };
 
-// Obtener información del restaurante
 export const getRestaurantInfo = async (restaurantId?: string) => {
   try {
     if (restaurantId) {
@@ -502,7 +490,6 @@ export const getRestaurantInfo = async (restaurantId?: string) => {
       }
     }
     
-    // Si no hay ID, obtener el primer restaurante
     const restaurantsResult = await getAllRestaurants();
     if (restaurantsResult.success && restaurantsResult.restaurants && restaurantsResult.restaurants.length > 0) {
       return { success: true, info: restaurantsResult.restaurants[0] };
@@ -515,7 +502,6 @@ export const getRestaurantInfo = async (restaurantId?: string) => {
   }
 };
 
-// Actualizar información del restaurante
 export const updateRestaurantInfo = async (restaurantId: string, info: Partial<RestaurantInfo>) => {
   try {
     const restaurantUpdates: any = {};
@@ -535,7 +521,6 @@ export const updateRestaurantInfo = async (restaurantId: string, info: Partial<R
 // FUNCIONES PARA PRODUCTOS
 // ============================================
 
-// Crear producto
 export const createProduct = async (productData: Omit<Product, 'id' | 'createdAt'>, restaurantId: string) => {
   try {
     const productsRef = ref(database, `restaurants/${restaurantId}/products`);
@@ -557,7 +542,6 @@ export const createProduct = async (productData: Omit<Product, 'id' | 'createdAt
   }
 };
 
-// Obtener todos los productos de un restaurante o de todos
 export const getProducts = async (restaurantId?: string) => {
   try {
     if (restaurantId) {
@@ -568,7 +552,7 @@ export const getProducts = async (restaurantId?: string) => {
         const products: Product[] = [];
         snapshot.forEach((childSnapshot) => {
           products.push({
-            id: childSnapshot.key, // ← AGREGAR ESTO
+            id: childSnapshot.key,
             ...childSnapshot.val()
           });
         });
@@ -576,7 +560,6 @@ export const getProducts = async (restaurantId?: string) => {
       }
       return { success: true, products: [] };
     } else {
-      // Obtener productos de todos los restaurantes
       const restaurantsResult = await getAllRestaurants();
       if (!restaurantsResult.success || !restaurantsResult.restaurants) {
         return { success: true, products: [] };
@@ -598,8 +581,6 @@ export const getProducts = async (restaurantId?: string) => {
   }
 };
 
-// Obtener productos disponibles
-
 export const getAvailableProducts = async (restaurantId?: string) => {
   try {
     if (restaurantId) {
@@ -612,7 +593,7 @@ export const getAvailableProducts = async (restaurantId?: string) => {
           const product = childSnapshot.val();
           if (product.available) {
             products.push({
-              id: childSnapshot.key, // ← CRÍTICO: Incluir el ID
+              id: childSnapshot.key,
               ...product
             });
           }
@@ -621,7 +602,6 @@ export const getAvailableProducts = async (restaurantId?: string) => {
       }
       return { success: true, products: [] };
     } else {
-      // Obtener productos de todos los restaurantes
       const restaurantsResult = await getAllRestaurants();
       if (!restaurantsResult.success || !restaurantsResult.restaurants) {
         return { success: true, products: [] };
@@ -643,7 +623,6 @@ export const getAvailableProducts = async (restaurantId?: string) => {
   }
 };
 
-// Obtener un producto por ID
 export const getProductById = async (productId: string, restaurantId: string) => {
   try {
     const dbRef = ref(database);
@@ -652,8 +631,8 @@ export const getProductById = async (productId: string, restaurantId: string) =>
       return { 
         success: true, 
         product: {
-          id: productId, // ← AGREGAR ESTA LÍNEA (CRÍTICO)
-          restaurantId: restaurantId, // ← AGREGAR ESTA LÍNEA
+          id: productId,
+          restaurantId: restaurantId,
           ...snapshot.val()
         } 
       };
@@ -665,7 +644,6 @@ export const getProductById = async (productId: string, restaurantId: string) =>
   }
 };
 
-// Actualizar producto
 export const updateProduct = async (productId: string, restaurantId: string, updates: Partial<Product>) => {
   try {
     const productUpdates: any = {};
@@ -683,7 +661,6 @@ export const updateProduct = async (productId: string, restaurantId: string, upd
   }
 };
 
-// Eliminar producto
 export const deleteProduct = async (productId: string, restaurantId: string) => {
   try {
     await remove(ref(database, `restaurants/${restaurantId}/products/${productId}`));
@@ -695,10 +672,9 @@ export const deleteProduct = async (productId: string, restaurantId: string) => 
 };
 
 // ============================================
-// FUNCIONES PARA ÓRDENES/PEDIDOS
+// FUNCIONES PARA ÓRDENES
 // ============================================
 
-// Crear orden
 export async function createOrder(orderData: {
   userId: string;
   restaurantId: string;
@@ -718,7 +694,6 @@ export async function createOrder(orderData: {
   userPhone: string;
 }, restaurantId: string): Promise<{ success: boolean; orderId?: string; error?: string }> {
   try {
-    // Guardar en la colección general de pedidos
     const ordersRef = ref(database, 'orders');
     const newOrderRef = push(ordersRef);
 
@@ -731,7 +706,6 @@ export async function createOrder(orderData: {
 
     await set(newOrderRef, orderToSave);
 
-    // También guardar en los pedidos del restaurante
     const restaurantOrderRef = ref(
       database,
       `restaurants/${orderData.restaurantId}/orders/${newOrderRef.key}`
@@ -747,7 +721,6 @@ export async function createOrder(orderData: {
   }
 }
 
-// Obtener todas las órdenes
 export const getAllOrders = async (restaurantId?: string) => {
   try {
     if (restaurantId) {
@@ -786,7 +759,6 @@ export const getAllOrders = async (restaurantId?: string) => {
   }
 };
 
-// Obtener órdenes de un usuario
 export async function getUserOrders(
   userId: string
 ): Promise<{ success: boolean; orders?: any[]; error?: string }> {
@@ -813,7 +785,6 @@ export async function getUserOrders(
   }
 }
 
-// Actualizar estado de orden
 export const updateOrderStatus = async (orderId: string, restaurantId: string, status: Order['status']) => {
   try {
     await update(ref(database), {
@@ -831,10 +802,8 @@ export const updateOrderStatus = async (orderId: string, restaurantId: string, s
 // FUNCIONES PARA RESERVACIONES
 // ============================================
 
-// Crear reservación
 export const createReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'updatedAt'>, restaurantId: string) => {
   try {
-    // Guardar SOLO en la colección PRINCIPAL de reservas
     const reservationsMainRef = ref(database, 'reservations');
     const newReservationMainRef = push(reservationsMainRef);
     const reservationId = newReservationMainRef.key;
@@ -842,15 +811,13 @@ export const createReservation = async (reservationData: Omit<Reservation, 'id' 
     const reservation: Reservation = {
       ...reservationData,
       id: reservationId!,
-      restaurantId: restaurantId, // Ya viene del parámetro
+      restaurantId: restaurantId,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
     
-    // Guardar en /reservations (colección principal)
     await set(newReservationMainRef, reservation);
     
-    // TAMBIÉN guardar en /restaurants/{restaurantId}/reservations
     const restaurantReservationRef = ref(database, `restaurants/${restaurantId}/reservations/${reservationId}`);
     await set(restaurantReservationRef, reservation);
     
@@ -861,7 +828,6 @@ export const createReservation = async (reservationData: Omit<Reservation, 'id' 
   }
 };
 
-// Obtener todas las reservaciones
 export const getAllReservations = async (restaurantId?: string) => {
   try {
     if (restaurantId) {
@@ -900,7 +866,6 @@ export const getAllReservations = async (restaurantId?: string) => {
   }
 };
 
-// Obtener reservaciones de un usuario
 export async function getUserReservations(
   userId: string
 ): Promise<{ success: boolean; reservations?: any[]; error?: string }> {
@@ -927,7 +892,6 @@ export async function getUserReservations(
   }
 }
 
-// Actualizar estado de reservación
 export const updateReservationStatus = async (reservationId: string, restaurantId: string, status: Reservation['status']) => {
   try {
     await update(ref(database), {
@@ -942,10 +906,9 @@ export const updateReservationStatus = async (reservationId: string, restaurantI
 };
 
 // ============================================
-// FUNCIONES PARA CARRITO DE COMPRAS
+// FUNCIONES PARA CARRITO
 // ============================================
 
-// Agregar producto al carrito
 export const addToCart = async (userId: string, productId: string, restaurantId: string, quantity: number = 1) => {
   try {
     const productResult = await getProductById(productId, restaurantId);
@@ -977,7 +940,6 @@ export const addToCart = async (userId: string, productId: string, restaurantId:
   }
 };
 
-// Obtener carrito del usuario
 export const getCart = async (userId: string) => {
   try {
     const dbRef = ref(database);
@@ -997,7 +959,6 @@ export const getCart = async (userId: string) => {
   }
 };
 
-// Actualizar cantidad en carrito
 export const updateCartItemQuantity = async (userId: string, productId: string, quantity: number) => {
   try {
     if (quantity <= 0) {
@@ -1015,7 +976,6 @@ export const updateCartItemQuantity = async (userId: string, productId: string, 
   }
 };
 
-// Eliminar producto del carrito
 export const removeFromCart = async (userId: string, productId: string) => {
   try {
     await remove(ref(database, `cart/${userId}/${productId}`));
@@ -1026,7 +986,6 @@ export const removeFromCart = async (userId: string, productId: string) => {
   }
 };
 
-// Limpiar carrito completo
 export const clearCart = async (userId: string) => {
   try {
     await remove(ref(database, `cart/${userId}`));
@@ -1037,7 +996,6 @@ export const clearCart = async (userId: string) => {
   }
 };
 
-// Obtener items del carrito con información de productos
 export const getCartItems = async (userId: string) => {
   try {
     const dbRef = ref(database);
@@ -1069,9 +1027,11 @@ export const getCartItems = async (userId: string) => {
     console.error('Error getting cart items:', error);
     return { success: false, error: error.message, items: [] };
   }
-  
 };
-// ==================== ADMIN AUTH FUNCTIONS ====================
+
+// ============================================
+// FUNCIONES ADMIN
+// ============================================
 
 export interface AdminUser {
   uid: string;
@@ -1081,9 +1041,6 @@ export interface AdminUser {
   name?: string;
 }
 
-/**
- * Verificar si un usuario es administrador
- */
 export async function isUserAdmin(userId: string): Promise<{
   success: boolean;
   isAdmin: boolean;
@@ -1117,9 +1074,6 @@ export async function isUserAdmin(userId: string): Promise<{
   }
 }
 
-/**
- * Obtener información del admin
- */
 export async function getAdminData(userId: string): Promise<{
   success: boolean;
   data?: AdminUser;
@@ -1151,3 +1105,59 @@ export async function getAdminData(userId: string): Promise<{
     };
   }
 }
+
+// ============================================
+// FUNCIONES PARA SUBIR IMÁGENES (BASE64)
+// ============================================
+
+/**
+ * Convertir imagen de producto a base64
+ */
+export const uploadProductImage = async (file: Blob, productId: string) => {
+  try {
+    console.log('📸 Convirtiendo imagen a base64...');
+    
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    
+    const imageURL = await base64Promise;
+    console.log('✅ Imagen convertida a base64, longitud:', imageURL.length);
+    
+    return { success: true, imageURL };
+  } catch (error: any) {
+    console.error('❌ Error converting product image to base64:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Convertir imagen de restaurante a base64
+ */
+export const uploadRestaurantImage = async (file: Blob, restaurantId: string) => {
+  try {
+    console.log('📸 Convirtiendo imagen de restaurante a base64...');
+    
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    
+    const imageURL = await base64Promise;
+    console.log('✅ Imagen de restaurante convertida a base64, longitud:', imageURL.length);
+    
+    return { success: true, imageURL };
+  } catch (error: any) {
+    console.error('❌ Error converting restaurant image to base64:', error);
+    return { success: false, error: error.message };
+  }
+};

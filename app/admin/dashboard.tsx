@@ -44,7 +44,7 @@ export default function AdminDashboard() {
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}
-      onNavigateToSettings={() => router.push('/')}
+      onNavigateToSettings={() => router.push('/admin/settings')}
       onNavigateToPromotions={() => router.push('/')}
     />
   );

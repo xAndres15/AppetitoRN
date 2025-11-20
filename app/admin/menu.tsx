@@ -1,17 +1,27 @@
 // app/admin/menu.tsx
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { auth, getUserRole } from '../../lib/firebase';
-import { AdminMenuScreen } from '../../screens/AdminMenuScreen';
+import { AdminMenuScreen, AdminMenuScreenRef } from '../../screens/AdminMenuScreen';
 
 export default function AdminMenu() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const screenRef = useRef<AdminMenuScreenRef>(null);
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Recargar cuando la pantalla vuelve al foco
+  useFocusEffect(
+    useCallback(() => {
+      if (screenRef.current && !loading) {
+        screenRef.current.reload();
+      }
+    }, [loading])
+  );
 
   const loadUserData = async () => {
     const user = auth.currentUser;
@@ -34,15 +44,21 @@ export default function AdminMenu() {
 
   return (
     <AdminMenuScreen
+      ref={screenRef}
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
-      onNavigateToStatistics={() => router.push('/admin/statistics')} // TODO: Implementar
-      onNavigateToSettings={() => {}} // TODO: Implementar
-      onNavigateToPromotions={() => {}} // TODO: Implementar
-      onNavigateToAddProduct={() => {}} // TODO: Implementar pantalla de agregar producto
-      onNavigateToEditProduct={() => {}} // TODO: Implementar pantalla de editar producto
+      onNavigateToStatistics={() => router.push('/admin/statistics')}
+      onNavigateToSettings={() => router.push('/admin/settings')}
+      onNavigateToPromotions={() => {}}
+      onNavigateToAddProduct={() =>
+        router.push({
+          pathname: '/admin/add-product',
+          params: { restaurantId: restaurantId || '' },
+        })
+      }
+      onNavigateToEditProduct={() => {}}
     />
   );
 }
