@@ -34,8 +34,7 @@ export default function AdminSettings() {
         router.push('/admin/notifications');
       }}
       onNavigateToPaymentMethods={() => {
-        // TODO: Implementar pantalla de métodos de pago
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto');
+        router.push('/admin/payment-methods');
       }}
     />
   );

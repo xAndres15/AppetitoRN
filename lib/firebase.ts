@@ -87,7 +87,12 @@ export interface RestaurantInfo {
     newOrders: boolean;
     newReservations: boolean;
     reservationReminders: boolean;
-    notificationSound: string;
+    notificationSound: string;  
+  };
+  paymentMethodsConfig?: {
+    cash: boolean;
+    creditCard: boolean;
+    debitCard: boolean;
   };
 }
 
