@@ -14,7 +14,6 @@ export default function AdminMenu() {
     loadUserData();
   }, []);
 
-  // Recargar cuando la pantalla vuelve al foco
   useFocusEffect(
     useCallback(() => {
       if (screenRef.current && !loading) {
@@ -58,7 +57,17 @@ export default function AdminMenu() {
           params: { restaurantId: restaurantId || '' },
         })
       }
-      onNavigateToEditProduct={() => {}}
+      onNavigateToEditProduct={(product) => {
+        if (!product.id || !restaurantId) return;
+
+        router.push({
+          pathname: '/admin/edit-product' as any, // ← SOLUCIÓN: Type assertion
+          params: {
+            productId: product.id,
+            restaurantId: restaurantId,
+          },
+        });
+      }}
     />
   );
 }
