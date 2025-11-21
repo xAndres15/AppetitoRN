@@ -28,8 +28,7 @@ export default function AdminSettings() {
         router.push('/admin/restaurant-info-edit'); // ← ACTUALIZADO
       }}
       onNavigateToOperatingHours={() => {
-        // TODO: Implementar pantalla de horarios
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto');
+        router.push('/admin/operating-hours');
       }}
       onNavigateToNotifications={() => {
         // TODO: Implementar pantalla de notificaciones
