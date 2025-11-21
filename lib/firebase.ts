@@ -64,17 +64,31 @@ export interface RestaurantInfo {
   logo?: string;
   coverImage?: string;
   phone?: string;
+  email?: string;
   cuisine?: string;
   isOpen?: boolean;
   schedule?: {
     day: string;
     hours: string;
+    isOpen: boolean;
   }[];
   rating?: number;
   reviews?: number;
   priceRange?: string;
   amenities?: string[];
   paymentMethods?: string[];
+  // Redes sociales
+  facebook?: string; 
+  instagram?: string; 
+  twitter?: string; 
+  tiktok?: string; 
+  // Configuración de notificaciones
+  notificationSettings?: {
+    newOrders: boolean;
+    newReservations: boolean;
+    reservationReminders: boolean;
+    notificationSound: string;
+  };
 }
 
 export interface Order {

@@ -31,8 +31,7 @@ export default function AdminSettings() {
         router.push('/admin/operating-hours');
       }}
       onNavigateToNotifications={() => {
-        // TODO: Implementar pantalla de notificaciones
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto');
+        router.push('/admin/notifications');
       }}
       onNavigateToPaymentMethods={() => {
         // TODO: Implementar pantalla de métodos de pago
