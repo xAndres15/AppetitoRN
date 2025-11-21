@@ -25,8 +25,7 @@ export default function AdminSettings() {
       onNavigateBack={() => router.back()}
       onLogout={handleLogout}
       onNavigateToRestaurantInfo={() => {
-        // TODO: Implementar pantalla de información del restaurante
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto');
+        router.push('/admin/restaurant-info-edit'); // ← ACTUALIZADO
       }}
       onNavigateToOperatingHours={() => {
         // TODO: Implementar pantalla de horarios
