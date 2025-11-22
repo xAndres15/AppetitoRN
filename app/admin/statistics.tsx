@@ -36,11 +36,12 @@ export default function AdminStatistics() {
     <AdminStatisticsScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
+      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
-      onNavigateToSettings={() => router.push('/admin/settings')} // TODO: Implementar
-      onNavigateToPromotions={() => {}} // TODO: Implementar
+      onNavigateToSettings={() => router.push('/admin/settings')}
+      onNavigateToPromotions={() => {}}
     />
   );
 }

@@ -18,6 +18,7 @@ import { useAdminOrdersViewModel } from '../viewmodels/AdminOrdersViewModel';
 interface AdminOrdersScreenProps {
   restaurantId: string | null;
   onNavigateBack: () => void;
+  onNavigateToDashboard: () => void; // ← NUEVO
   onNavigateToReservations: () => void;
   onNavigateToMenu: () => void;
   onNavigateToStatistics: () => void;
@@ -35,6 +36,7 @@ export const AdminOrdersScreen = forwardRef<AdminOrdersScreenRef, AdminOrdersScr
     {
       restaurantId,
       onNavigateBack,
+      onNavigateToDashboard, // ← NUEVO
       onNavigateToReservations,
       onNavigateToMenu,
       onNavigateToStatistics,
@@ -98,7 +100,7 @@ export const AdminOrdersScreen = forwardRef<AdminOrdersScreenRef, AdminOrdersScr
               <Text style={styles.restaurantName}>{restaurantName}</Text>
             </View>
             <View style={styles.topActions}>
-              <TouchableOpacity style={styles.iconButton}>
+              <TouchableOpacity style={styles.iconButton} onPress={onNavigateToDashboard}>
                 <Ionicons name="home" size={20} color="#374151" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>

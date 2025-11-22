@@ -57,6 +57,7 @@ export default function AdminOrders() {
       ref={screenRef}
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
+      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}

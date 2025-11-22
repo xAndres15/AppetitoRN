@@ -1,16 +1,18 @@
 // viewmodels/AdminMenuViewModel.ts
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { Product, getProducts, updateProduct } from '../lib/firebase';
+import { Product, getProducts, getRestaurantInfo, updateProduct } from '../lib/firebase';
 
 export function useAdminMenuViewModel(restaurantId: string | null) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [restaurantName, setRestaurantName] = useState('Mi Restaurante');
 
   useEffect(() => {
     if (restaurantId) {
       loadProducts();
+      loadData();
     }
   }, [restaurantId]);
 
@@ -30,6 +32,16 @@ export function useAdminMenuViewModel(restaurantId: string | null) {
     setLoading(false);
   };
 
+  const loadData = async () => {
+    // Cargar nombre del restaurante
+    if (restaurantId) {
+      const result = await getRestaurantInfo(restaurantId);
+      if (result.success && result.info) {
+        setRestaurantName(result.info.name || 'Mi Restaurante');
+      }
+    }
+  };
+  
   const reload = () => {
     loadProducts();
   };
@@ -65,6 +77,7 @@ export function useAdminMenuViewModel(restaurantId: string | null) {
   );
 
   return {
+    restaurantName,
     products,
     loading,
     searchQuery,

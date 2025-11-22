@@ -36,11 +36,12 @@ export default function AdminReservations() {
     <AdminReservationsScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
+      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
       onNavigateToOrders={() => router.push('/admin/orders')}
-      onNavigateToMenu={() => router.push('/admin/menu')} // TODO: Implementar cuando esté listo
-      onNavigateToStatistics={() => router.push('/admin/statistics')} // TODO: Implementar cuando esté listo
-      onNavigateToSettings={() => router.push('/admin/settings')} // TODO: Implementar cuando esté listo
-      onNavigateToPromotions={() => {}} // TODO: Implementar cuando esté listo
+      onNavigateToMenu={() => router.push('/admin/menu')}
+      onNavigateToStatistics={() => router.push('/admin/statistics')}
+      onNavigateToSettings={() => router.push('/admin/settings')}
+      onNavigateToPromotions={() => {}}
     />
   );
 }

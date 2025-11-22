@@ -46,6 +46,7 @@ export default function AdminMenu() {
       ref={screenRef}
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
+      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}
@@ -61,7 +62,7 @@ export default function AdminMenu() {
         if (!product.id || !restaurantId) return;
 
         router.push({
-          pathname: '/admin/edit-product' as any, // ← SOLUCIÓN: Type assertion
+          pathname: '/admin/edit-product' as any,
           params: {
             productId: product.id,
             restaurantId: restaurantId,

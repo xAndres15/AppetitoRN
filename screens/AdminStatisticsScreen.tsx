@@ -19,6 +19,7 @@ import { useAdminStatisticsViewModel } from '../viewmodels/AdminStatisticsViewMo
 interface AdminStatisticsScreenProps {
   restaurantId: string | null;
   onNavigateBack: () => void;
+  onNavigateToDashboard: () => void; // ← NUEVO
   onNavigateToOrders: () => void;
   onNavigateToReservations: () => void;
   onNavigateToMenu: () => void;
@@ -31,6 +32,7 @@ const screenWidth = Dimensions.get('window').width;
 export function AdminStatisticsScreen({
   restaurantId,
   onNavigateBack,
+  onNavigateToDashboard, // ← NUEVO
   onNavigateToOrders,
   onNavigateToReservations,
   onNavigateToMenu,
@@ -110,7 +112,7 @@ export function AdminStatisticsScreen({
             <Text style={styles.restaurantName}>{restaurantName}</Text>
           </View>
           <View style={styles.topActions}>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={onNavigateToDashboard}>
               <Ionicons name="home" size={20} color="#374151" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>

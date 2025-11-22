@@ -3,13 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { useAdminReservationsViewModel } from '../viewmodels/AdminReservationsViewModel';
@@ -17,6 +17,7 @@ import { useAdminReservationsViewModel } from '../viewmodels/AdminReservationsVi
 interface AdminReservationsScreenProps {
   restaurantId: string | null;
   onNavigateBack: () => void;
+  onNavigateToDashboard: () => void; // ← NUEVO
   onNavigateToOrders: () => void;
   onNavigateToMenu: () => void;
   onNavigateToStatistics: () => void;
@@ -27,6 +28,7 @@ interface AdminReservationsScreenProps {
 export function AdminReservationsScreen({
   restaurantId,
   onNavigateBack,
+  onNavigateToDashboard, // ← NUEVO
   onNavigateToOrders,
   onNavigateToMenu,
   onNavigateToStatistics,
@@ -81,7 +83,7 @@ export function AdminReservationsScreen({
             <Text style={styles.restaurantName}>{restaurantName}</Text>
           </View>
           <View style={styles.topActions}>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={onNavigateToDashboard}>
               <Ionicons name="home" size={20} color="#374151" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>

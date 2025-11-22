@@ -19,6 +19,7 @@ import { useAdminMenuViewModel } from '../viewmodels/AdminMenuViewModel';
 interface AdminMenuScreenProps {
   restaurantId: string | null;
   onNavigateBack: () => void;
+  onNavigateToDashboard: () => void; // ← NUEVO
   onNavigateToOrders: () => void;
   onNavigateToReservations: () => void;
   onNavigateToStatistics: () => void;
@@ -37,6 +38,7 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
     {
       restaurantId,
       onNavigateBack,
+      onNavigateToDashboard, // ← NUEVO
       onNavigateToOrders,
       onNavigateToReservations,
       onNavigateToStatistics,
@@ -56,6 +58,7 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
       formatPrice,
       toggleAvailability,
       reload,
+      restaurantName,
     } = useAdminMenuViewModel(restaurantId);
 
     // Exponer el método reload al componente padre
@@ -88,18 +91,30 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
                 <View style={styles.notificationButton}>
                   <Ionicons name="notifications" size={24} color="#374151" />
                 </View>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>3</Text>
-                </View>
+                <View style={styles.badge} />
               </View>
             </View>
-
-            <Text style={styles.headerTitle}>Panel de Administración</Text>
           </View>
         </LinearGradient>
 
         {/* Content */}
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Welcome Section - NUEVO */}
+          <View style={styles.welcomeSection}>
+            <View>
+              <Text style={styles.welcomeLabel}>Bienvenido</Text>
+              <Text style={styles.restaurantName}>{restaurantName}</Text>
+            </View>
+            <View style={styles.topActions}>
+              <TouchableOpacity style={styles.iconButton} onPress={onNavigateToDashboard}>
+                <Ionicons name="home" size={20} color="#374151" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={onNavigateToSettings}>
+                <Ionicons name="settings" size={20} color="#374151" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Navigation Tabs */}
           <AdminNavigation
             activeTab="menu"
@@ -112,7 +127,7 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
 
           {/* Menu Management Header */}
           <View style={styles.menuHeader}>
-            <Text style={styles.menuTitle}>Gestión de Menú</Text>
+            <Text style={styles.menuTitle}>Productos</Text>
             <TouchableOpacity style={styles.addButton} onPress={onNavigateToAddProduct}>
               <Ionicons name="add" size={20} color="#FFF" />
               <Text style={styles.addButtonText}>Agregar</Text>
@@ -264,19 +279,14 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
+    top: 0,
+    right: 0,
+    width: 12,
+    height: 12,
     backgroundColor: '#EF4444',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   headerTitle: {
     fontSize: 20,
@@ -289,6 +299,40 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 24,
+  },
+  // NUEVO - Welcome Section
+  welcomeSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcomeLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  restaurantName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  topActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   menuHeader: {
     flexDirection: 'row',
