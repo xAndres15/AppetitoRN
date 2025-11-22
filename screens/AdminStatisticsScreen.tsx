@@ -3,14 +3,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { useAdminStatisticsViewModel } from '../viewmodels/AdminStatisticsViewModel';
 
@@ -23,6 +25,8 @@ interface AdminStatisticsScreenProps {
   onNavigateToSettings: () => void;
   onNavigateToPromotions: () => void;
 }
+
+const screenWidth = Dimensions.get('window').width;
 
 export function AdminStatisticsScreen({
   restaurantId,
@@ -42,8 +46,28 @@ export function AdminStatisticsScreen({
     todayRevenue,
     weekRevenue,
     monthRevenue,
+    salesChartData,
+    topProductsData,
+    orderStatusData,
     formatPrice,
   } = useAdminStatisticsViewModel(restaurantId);
+
+  const chartConfig = {
+    backgroundColor: '#FFF',
+    backgroundGradientFrom: '#FFF',
+    backgroundGradientTo: '#FFF',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: '4',
+      strokeWidth: '2',
+      stroke: '#F97316',
+    },
+  };
 
   return (
     <View style={styles.container}>
@@ -170,15 +194,81 @@ export function AdminStatisticsScreen({
               </View>
             </View>
 
-            {/* Coming Soon */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Gráficas y reportes</Text>
-              <Text style={styles.comingSoon}>Próximamente...</Text>
-              <Text style={styles.comingSoonDesc}>
-                Aquí podrás ver gráficas detalladas de ventas, productos más vendidos, horarios
-                pico y más.
-              </Text>
-            </View>
+            {/* Sales Chart */}
+            {((salesChartData.datasets?.[0]?.data?.length ?? 0) > 0) && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Ventas últimos 7 días</Text>
+                <LineChart
+                  data={salesChartData}
+                  width={screenWidth - 64}
+                  height={220}
+                  chartConfig={chartConfig}
+                  bezier
+                  style={styles.chart}
+                  withInnerLines={false}
+                  withOuterLines={true}
+                  withVerticalLabels={true}
+                  withHorizontalLabels={true}
+                  formatYLabel={(value) => `$${parseFloat(value).toFixed(0)}`}
+                />
+              </View>
+            )}
+
+            {/* Top Products Chart */}
+            {((topProductsData.datasets?.[0]?.data?.length ?? 0) > 0) && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Productos más vendidos</Text>
+                <BarChart
+                  data={topProductsData}
+                  width={screenWidth - 64}
+                  height={220}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                  chartConfig={{
+                    ...chartConfig,
+                    barPercentage: 0.7,
+                  }}
+                  style={styles.chart}
+                  showValuesOnTopOfBars
+                  fromZero
+                  withInnerLines={false}
+                />
+              </View>
+            )}
+
+            {/* Order Status Chart */}
+            {orderStatusData.length > 0 && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Distribución de pedidos</Text>
+                <PieChart
+                  data={orderStatusData.map((item) => ({
+                    ...item,
+                    population: item.count,
+                  }))}
+                  width={screenWidth - 64}
+                  height={220}
+                  chartConfig={chartConfig}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="15"
+                  style={styles.chart}
+                />
+              </View>
+            )}
+
+            {/* No Data Message */}
+            {totalOrders === 0 && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Gráficas y reportes</Text>
+                <View style={styles.noDataContainer}>
+                  <Ionicons name="analytics-outline" size={48} color="#D1D5DB" />
+                  <Text style={styles.noDataText}>No hay datos suficientes</Text>
+                  <Text style={styles.noDataDesc}>
+                    Las gráficas se mostrarán cuando tengas pedidos registrados.
+                  </Text>
+                </View>
+              </View>
+            )}
           </>
         )}
 
@@ -378,14 +468,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
   },
-  comingSoon: {
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  noDataText: {
     fontSize: 16,
+    fontWeight: '600',
     color: '#9CA3AF',
+    marginTop: 16,
     marginBottom: 8,
   },
-  comingSoonDesc: {
+  noDataDesc: {
     fontSize: 14,
     color: '#9CA3AF',
+    textAlign: 'center',
     lineHeight: 20,
+    paddingHorizontal: 32,
   },
 });
