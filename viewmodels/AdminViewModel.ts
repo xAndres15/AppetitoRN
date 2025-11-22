@@ -4,12 +4,23 @@ import { Alert } from 'react-native';
 import { Order, Reservation } from '../lib/firebase';
 import { AdminService } from '../services/AdminService';
 
+interface ChartData {
+  labels: string[];
+  datasets: {
+    data: number[];
+  }[];
+}
+
 export function useAdminViewModel(restaurantId: string | null) {
   const [restaurantName, setRestaurantName] = useState('Mi Restaurante');
   const [isOpen, setIsOpen] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [salesChartData, setSalesChartData] = useState<ChartData>({
+    labels: [],
+    datasets: [{ data: [0] }],
+  });
 
   useEffect(() => {
     if (restaurantId) {
@@ -40,6 +51,7 @@ export function useAdminViewModel(restaurantId: string | null) {
     const ordersResult = await AdminService.getOrders(restaurantId);
     if (ordersResult.success && ordersResult.data) {
       setOrders(ordersResult.data.slice(0, 5));
+      generateSalesChart(ordersResult.data);
     }
 
     // Cargar reservas
@@ -49,6 +61,36 @@ export function useAdminViewModel(restaurantId: string | null) {
     }
 
     setLoading(false);
+  };
+
+  const generateSalesChart = (allOrders: Order[]) => {
+    const labels: string[] = [];
+    const data: number[] = [];
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const dayOrders = allOrders.filter((o) => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate >= date && orderDate < nextDay;
+      });
+
+      const dayRevenue = dayOrders.reduce((sum, order) => sum + order.total, 0);
+
+      labels.push(days[date.getDay()]);
+      data.push(dayRevenue);
+    }
+
+    setSalesChartData({
+      labels,
+      datasets: [{ data: data.length > 0 && data.some((d) => d > 0) ? data : [0] }],
+    });
   };
 
   const toggleOpenStatus = async () => {
@@ -120,6 +162,7 @@ export function useAdminViewModel(restaurantId: string | null) {
     reservations,
     loading,
     todayIncome,
+    salesChartData,
     toggleOpenStatus,
     formatOrderId,
     formatDate,

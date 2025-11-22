@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Switch,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { useAdminViewModel } from '../viewmodels/AdminViewModel';
 
@@ -26,6 +28,8 @@ interface AdminDashboardScreenProps {
   onNavigateToSettings: () => void;
   onNavigateToPromotions: () => void;
 }
+
+const screenWidth = Dimensions.get('window').width;
 
 export function AdminDashboardScreen({
   restaurantId,
@@ -45,6 +49,7 @@ export function AdminDashboardScreen({
     reservations,
     loading,
     todayIncome,
+    salesChartData,
     toggleOpenStatus,
     formatOrderId,
     formatDate,
@@ -52,15 +57,30 @@ export function AdminDashboardScreen({
     getStatusColor,
   } = useAdminViewModel(restaurantId);
 
+  const chartConfig = {
+    backgroundColor: '#FFF',
+    backgroundGradientFrom: '#FFF',
+    backgroundGradientTo: '#FFF',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: '4',
+      strokeWidth: '2',
+      stroke: '#F97316',
+    },
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
+
 
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
@@ -155,7 +175,9 @@ export function AdminDashboardScreen({
                   </Text>
                   <View style={styles.statusRow}>
                     <Text style={styles.statusText}>{getStatusLabel(order.status)}</Text>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(order.status) }]} />
+                    <View
+                      style={[styles.statusDot, { backgroundColor: getStatusColor(order.status) }]}
+                    />
                   </View>
                 </View>
               ))}
@@ -199,11 +221,30 @@ export function AdminDashboardScreen({
           <Text style={styles.incomeAmount}>${todayIncome.toLocaleString('es-CO')}</Text>
         </View>
 
-        {/* Statistics */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estadísticas</Text>
-          <Text style={styles.comingSoon}>Próximamente...</Text>
-        </View>
+        {/* Sales Chart */}
+        {((salesChartData.datasets?.[0]?.data?.length ?? 0) > 0) && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Ventas últimos 7 días</Text>
+              <TouchableOpacity onPress={onNavigateToStatistics}>
+                <Ionicons name="chevron-forward" size={20} color="#F97316" />
+              </TouchableOpacity>
+            </View>
+            <LineChart
+              data={salesChartData}
+              width={screenWidth - 64}
+              height={200}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+              withInnerLines={false}
+              withOuterLines={true}
+              withVerticalLabels={true}
+              withHorizontalLabels={true}
+              formatYLabel={(value) => `$${parseFloat(value).toFixed(0)}`}
+            />
+          </View>
+        )}
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
@@ -408,10 +449,9 @@ const styles = StyleSheet.create({
     color: '#10B981',
     marginTop: 8,
   },
-  comingSoon: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 8,
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
   logoutButton: {
     backgroundColor: '#EF4444',
