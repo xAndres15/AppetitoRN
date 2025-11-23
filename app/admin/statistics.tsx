@@ -36,7 +36,7 @@ export default function AdminStatistics() {
     <AdminStatisticsScreen
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
+      onNavigateToDashboard={() => router.push('/admin/dashboard')}
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}

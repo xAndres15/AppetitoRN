@@ -82,7 +82,7 @@ export default function Login() {
                     <View style={styles.inputContainer}>
                         <Ionicons name="person-outline" size={20} color="#888" style={styles.icon} />
                         <TextInput
-                            placeholder="Usuario (número o correo)"
+                            placeholder="Usuario (correo)"
                             placeholderTextColor="#999"
                             style={styles.input}
                             value={email}
@@ -142,10 +142,6 @@ export default function Login() {
                         <Text style={styles.linkText} onPress={() => router.push("/register")}>
                             Regístrate ahora
                         </Text>
-                    </Text>
-                    
-                    <Text style={styles.linkText}>
-                        Regístrate como restaurante o repartidor →
                     </Text>
                 </View>
             </SafeAreaView>
