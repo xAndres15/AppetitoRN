@@ -18,6 +18,12 @@ export default function Order() {
         category: dish.category || '',
         restaurantId: dish.restaurantId || '',
         available: String(dish.available ?? true),
+        // ✅ NUEVOS PARÁMETROS DE PROMOCIÓN
+        hasPromotion: String(dish.hasPromotion || false),
+        promotionDiscount: dish.promotionDiscount || '',
+        promotionTitle: dish.promotionTitle || '',
+        originalPrice: String(dish.originalPrice || 0),
+        discountedPrice: String(dish.discountedPrice || 0),
       },
     });
   };

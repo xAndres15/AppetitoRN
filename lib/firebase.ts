@@ -40,6 +40,11 @@ export interface Product {
   available: boolean;
   restaurantId: string;
   createdAt: number;
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
+  originalPrice?: number;
+  discountedPrice?: number;
 }
 
 export interface Restaurant {

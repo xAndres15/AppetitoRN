@@ -38,7 +38,7 @@ export default function DishDetail() {
     createdAt: Number(getParam(params.createdAt)) || Date.now(),
   };
 
-  // ✅ NUEVO: Datos de promoción
+  // ✅ DATOS DE PROMOCIÓN
   const hasPromotion = getParam(params.hasPromotion) === 'true';
   const promotionDiscount = getParam(params.promotionDiscount);
   const promotionTitle = getParam(params.promotionTitle);
@@ -48,7 +48,6 @@ export default function DishDetail() {
       dish={dish}
       onNavigateBack={() => router.back()}
       onAddToCart={() => router.push('/(tabs)/cart')}
-      // ✅ NUEVO: Pasar info de promoción
       hasPromotion={hasPromotion}
       promotionDiscount={promotionDiscount}
       promotionTitle={promotionTitle}

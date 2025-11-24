@@ -37,7 +37,7 @@ export function OrderScreen({
     filteredProducts,
     formatPrice,
     handleAddToCart,
-    cartItemCount, // ← AGREGADO
+    cartItemCount,
   } = useOrderViewModel();
 
   return (
@@ -79,8 +79,7 @@ export function OrderScreen({
               />
             </View>
 
-            {/* Botón de notificaciones CON BADGE DEL CARRITO */}
-            {/* Botón de notificaciones CON BADGE DEL CARRITO */}
+            {/* Botón de notificaciones */}
             <TouchableOpacity style={styles.notificationButton}>
               <Ionicons name="notifications" size={24} color="#374151" />
             </TouchableOpacity>
@@ -158,6 +157,14 @@ export function OrderScreen({
                       source={{ uri: dish.image }}
                       style={styles.productImage}
                     />
+                    {/* ✅ NUEVO: Badge de promoción */}
+                    {dish.hasPromotion && dish.promotionDiscount && (
+                      <View style={styles.promotionBadge}>
+                        <Text style={styles.promotionText}>
+                          {dish.promotionDiscount}
+                        </Text>
+                      </View>
+                    )}
                   </View>
 
                   <View style={styles.productDetails}>
@@ -165,12 +172,30 @@ export function OrderScreen({
                       <Text style={styles.productName} numberOfLines={1}>
                         {dish.name}
                       </Text>
+                      {/* ✅ NUEVO: Título de promoción */}
+                      {dish.hasPromotion && dish.promotionTitle && (
+                        <Text style={styles.promotionTitle} numberOfLines={1}>
+                          🎁 {dish.promotionTitle}
+                        </Text>
+                      )}
                       <Text style={styles.productDescription} numberOfLines={2}>
                         {dish.description}
                       </Text>
-                      <Text style={styles.productPrice}>
-                        {formatPrice(dish.price)}
-                      </Text>
+                      {/* ✅ NUEVO: Precio con descuento */}
+                      {dish.hasPromotion && dish.originalPrice && dish.discountedPrice ? (
+                        <View>
+                          <Text style={styles.originalPrice}>
+                            {formatPrice(dish.originalPrice)}
+                          </Text>
+                          <Text style={styles.productPrice}>
+                            {formatPrice(dish.discountedPrice)}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.productPrice}>
+                          {formatPrice(dish.price)}
+                        </Text>
+                      )}
                     </View>
 
                     <TouchableOpacity
@@ -202,7 +227,7 @@ export function OrderScreen({
       {/* Bottom Navigation */}
       <BottomNav 
         currentScreen="home"
-        cartItemCount={cartItemCount} // ← AGREGADO
+        cartItemCount={cartItemCount}
       />
     </View>
   );
@@ -261,10 +286,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
   },
-  micIcon: {
-    marginLeft: 8,
-  },
-  notificationButton: { // ← CAMBIADO de cartButton
+  notificationButton: {
     width: 48,
     height: 48,
     backgroundColor: '#fff',
@@ -348,6 +370,7 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 12,
     overflow: 'hidden',
+    position: 'relative',
   },
   productImage: {
     width: '100%',
@@ -358,6 +381,33 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 12,
     backgroundColor: '#E5E7EB',
+  },
+  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
+  promotionBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  promotionText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  promotionTitle: {
+    fontSize: 12,
+    color: '#F97316',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
   },
   productDetails: {
     flex: 1,
