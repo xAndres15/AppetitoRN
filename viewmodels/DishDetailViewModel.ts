@@ -1,24 +1,56 @@
-// viewmodels/DishDetailViewModel.ts
+// viewmodels/DishDetailViewModel.ts - REEMPLAZAR FUNCIÓN COMPLETA
+
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { addDishFavorite, addToCart, auth, getProductById, isDishFavorite, Product, removeDishFavorite } from '../lib/firebase';
+import {
+  addDishFavorite,
+  addToCart,
+  auth,
+  getProductById,
+  isDishFavorite,
+  Product,
+  removeDishFavorite
+} from '../lib/firebase';
 
-export function useDishDetailViewModel(dish: Product) {
-  const [dishData, setDishData] = useState<Product>(dish); // ← AGREGADO
+// ✅ NUEVA INTERFACE PARA PROMOCIÓN
+interface PromotionData {
+  hasPromotion: boolean;
+  promotionDiscount: string;
+  promotionTitle: string;
+}
+
+export function useDishDetailViewModel(
+  dish: Product,
+  promotionData?: PromotionData // ✅ NUEVO PARÁMETRO
+) {
+  const [dishData, setDishData] = useState<Product>(dish);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isFavoriteState, setIsFavoriteState] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
 
+  // ✅ CALCULAR PRECIO CON DESCUENTO
+  const parseDiscount = (discountText: string): number => {
+    const match = discountText.match(/(\d+)%/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return 0;
+  };
+
+  const originalPrice = dishData.price;
+  const discountPercentage = promotionData ? parseDiscount(promotionData.promotionDiscount) : 0;
+  const discountedPrice = discountPercentage > 0 
+    ? originalPrice * (1 - discountPercentage / 100)
+    : originalPrice;
+
   useEffect(() => {
-    // ← AGREGADO: Solo cargar si faltan datos
     if (!dish.name || dish.price === 0) {
       loadDishData();
     }
     checkIfFavorite();
   }, [dish.id]);
 
-  // ← FUNCIÓN NUEVA AGREGADA
   const loadDishData = async () => {
     if (!dish.id || !dish.restaurantId) return;
     
@@ -78,10 +110,10 @@ export function useDishDetailViewModel(dish: Product) {
       } else {
         const result = await addDishFavorite(user.uid, {
           dishId: dish.id,
-          dishName: dishData.name, // ← CAMBIADO de dish a dishData
-          dishImage: dishData.image, // ← CAMBIADO
-          dishCategory: dishData.category, // ← CAMBIADO
-          dishPrice: dishData.price, // ← CAMBIADO
+          dishName: dishData.name,
+          dishImage: dishData.image,
+          dishCategory: dishData.category,
+          dishPrice: dishData.price,
           restaurantId: dish.restaurantId,
           restaurantName: 'Appetito',
         });
@@ -122,8 +154,24 @@ export function useDishDetailViewModel(dish: Product) {
     setIsAddingToCart(true);
 
     try {
+      // ✅ PREPARAR DATOS DE PROMOCIÓN SI EXISTEN
+      const cartPromotionData = promotionData && discountPercentage > 0 ? {
+        hasPromotion: true,
+        promotionDiscount: promotionData.promotionDiscount,
+        promotionTitle: promotionData.promotionTitle,
+        originalPrice: originalPrice,
+        discountedPrice: discountedPrice,
+      } : undefined;
+
       for (let i = 0; i < quantity; i++) {
-        const result = await addToCart(user.uid, dish.id, dish.restaurantId);
+        const result = await addToCart(
+          user.uid, 
+          dish.id, 
+          dish.restaurantId,
+          1, // ← quantity individual
+          cartPromotionData // ← ✅ PASAR DATOS DE PROMOCIÓN
+        );
+        
         if (!result.success) {
           Alert.alert('Error', result.error || 'Error al agregar al carrito');
           setIsAddingToCart(false);
@@ -149,11 +197,11 @@ export function useDishDetailViewModel(dish: Product) {
   };
 
   const calculateTotalPrice = () => {
-    return dishData.price * quantity; // ← CAMBIADO de dish a dishData
+    return dishData.price * quantity;
   };
 
   return {
-    dishData, // ← AGREGADO
+    dishData,
     quantity,
     incrementQuantity,
     decrementQuantity,

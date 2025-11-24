@@ -11,6 +11,12 @@ export interface CartItem {
   image: string;
   quantity: number;
   restaurantId: string;
+  // ✅ AGREGAR CAMPOS DE PROMOCIÓN
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
+  originalPrice?: number;
+  discountedPrice?: number;
 }
 
 export function useCartViewModel() {
@@ -74,9 +80,11 @@ export function useCartViewModel() {
     }
   };
 
+  // ✅ ACTUALIZAR PARA USAR PRECIO CON DESCUENTO
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => {
-      return total + (item.price * item.quantity);
+      const finalPrice = item.discountedPrice || item.price;
+      return total + (finalPrice * item.quantity);
     }, 0);
   };
 

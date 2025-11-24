@@ -1,17 +1,26 @@
-// app/admin/dashboard.tsx
+// app/admin/promotions.tsx
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { auth, getUserRole } from '../../lib/firebase';
-import { AdminDashboardScreen } from '../../screens/AdminDashboardScreen';
+import { AdminPromotionsScreen } from '../../screens/AdminPromotionsScreen';
 
-export default function AdminDashboard() {
+export default function AdminPromotions() {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // ✅ Recargar cuando vuelve de crear/editar
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey(prev => prev + 1);
+    }, [])
+  );
 
   const loadUserData = async () => {
     const user = auth.currentUser;
@@ -32,20 +41,28 @@ export default function AdminDashboard() {
     );
   }
 
+  if (!restaurantId) {
+    return null;
+  }
+
   return (
-    <AdminDashboardScreen
+    <AdminPromotionsScreen
+      key={refreshKey}
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onLogout={async () => {
-        await auth.signOut();
-        router.replace('/login');
-      }}
+      onNavigateToDashboard={() => router.push('/admin/dashboard')}
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}
       onNavigateToSettings={() => router.push('/admin/settings')}
-      onNavigateToPromotions={() => router.push('/admin/promotions')}
+      onNavigateToAddPromotion={() => router.push('/admin/add-promotion')}
+      onNavigateToEditPromotion={(promotionId, restaurantId) => {
+        router.push({
+          pathname: '/admin/edit-promotion',
+          params: { promotionId, restaurantId },
+        });
+      }}
     />
   );
 }

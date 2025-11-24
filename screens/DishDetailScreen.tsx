@@ -21,12 +21,18 @@ interface DishDetailScreenProps {
   dish: Product;
   onNavigateBack: () => void;
   onAddToCart: () => void;
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
 }
 
 export function DishDetailScreen({
   dish,
   onNavigateBack,
   onAddToCart,
+  hasPromotion = false,
+  promotionDiscount = '',
+  promotionTitle = '',
 }: DishDetailScreenProps) {
   const {
     quantity,
@@ -39,7 +45,37 @@ export function DishDetailScreen({
     calculateTotalPrice,
     isAddingToCart,
     checkingFavorite,
-  } = useDishDetailViewModel(dish);
+  } = useDishDetailViewModel(
+    dish,
+    hasPromotion ? {
+      hasPromotion,
+      promotionDiscount,
+      promotionTitle
+    } : undefined
+  );
+
+  // ✅ NUEVA FUNCIÓN: Extraer porcentaje del string de descuento
+  const parseDiscount = (discountText: string): number => {
+    const match = discountText.match(/(\d+)%/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return 0;
+  };
+
+  // ✅ CALCULAR PRECIOS CON DESCUENTO
+  const originalPrice = dish.price;
+  const discountPercentage = hasPromotion ? parseDiscount(promotionDiscount) : 0;
+  const priceWithDiscount = discountPercentage > 0 
+    ? originalPrice * (1 - discountPercentage / 100)
+    : originalPrice;
+  const finalPrice = hasPromotion && discountPercentage > 0 ? priceWithDiscount : originalPrice;
+  const savings = originalPrice - finalPrice;
+
+  // ✅ CALCULAR TOTAL CON PRECIO PROMOCIONAL
+  const calculateFinalTotalPrice = () => {
+    return finalPrice * quantity;
+  };
 
   const handleAddToCartPress = async () => {
     const result = await handleAddToCart();
@@ -102,6 +138,14 @@ export function DishDetailScreen({
                 color="#EF4444"
               />
             </TouchableOpacity>
+
+            {/* ✅ NUEVO: Badge de promoción */}
+            {hasPromotion && discountPercentage > 0 && (
+              <View style={styles.promotionBadge}>
+                <Ionicons name="pricetag" size={16} color="#FFF" />
+                <Text style={styles.promotionBadgeText}>{promotionDiscount}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -116,6 +160,15 @@ export function DishDetailScreen({
           </View>
 
           <Text style={styles.restaurant}>Appetito</Text>
+
+          {/* ✅ NUEVO: Mensaje de promoción */}
+          {hasPromotion && promotionTitle && (
+            <View style={styles.promotionInfo}>
+              <Ionicons name="gift-outline" size={20} color="#F97316" />
+              <Text style={styles.promotionInfoText}>{promotionTitle}</Text>
+            </View>
+          )}
+
           <Text style={styles.description}>{dish.description}</Text>
 
           {dish.category && (
@@ -123,6 +176,24 @@ export function DishDetailScreen({
               <Text style={styles.categoryText}>{dish.category}</Text>
             </View>
           )}
+
+          {/* ✅ NUEVO: Sección de precio con descuento */}
+          <View style={styles.priceSection}>
+            <Text style={styles.sectionTitle}>Precio</Text>
+            <View style={styles.priceContainer}>
+              {hasPromotion && discountPercentage > 0 ? (
+                <>
+                  <View>
+                    <Text style={styles.originalPrice}>{formatPrice(originalPrice)}</Text>
+                    <Text style={styles.discountedPrice}>{formatPrice(finalPrice)}</Text>
+                    <Text style={styles.savings}>Ahorras {formatPrice(savings)}</Text>
+                  </View>
+                </>
+              ) : (
+                <Text style={styles.currentPrice}>{formatPrice(originalPrice)}</Text>
+              )}
+            </View>
+          </View>
 
           {/* Cantidad */}
           <View style={styles.quantitySection}>
@@ -153,7 +224,12 @@ export function DishDetailScreen({
           <View style={styles.footer}>
             <View>
               <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalPrice}>{formatPrice(calculateTotalPrice())}</Text>
+              <Text style={styles.totalPrice}>{formatPrice(calculateFinalTotalPrice())}</Text>
+              {hasPromotion && discountPercentage > 0 && quantity > 1 && (
+                <Text style={styles.totalSavings}>
+                  Ahorras {formatPrice(savings * quantity)} en total
+                </Text>
+              )}
             </View>
 
             <TouchableOpacity
@@ -262,6 +338,29 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
+  promotionBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  promotionBadgeText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   infoCard: {
     backgroundColor: '#fff',
     marginHorizontal: 16,
@@ -305,6 +404,22 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginBottom: 12,
   },
+  // ✅ NUEVO: Info de promoción
+  promotionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  promotionInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#F97316',
+    fontWeight: '600',
+  },
   description: {
     fontSize: 14,
     color: '#4B5563',
@@ -323,6 +438,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#92400E',
     fontWeight: '500',
+  },
+  // ✅ NUEVO: Sección de precios
+  priceSection: {
+    marginBottom: 20,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+    marginBottom: 4,
+  },
+  discountedPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#EF4444',
+    marginBottom: 4,
+  },
+  currentPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  savings: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: '600',
   },
   quantitySection: {
     marginBottom: 20,
@@ -380,6 +525,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#EF4444',
+  },
+  // ✅ NUEVO: Total de ahorros
+  totalSavings: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '600',
+    marginTop: 2,
   },
   addButton: {
     flex: 1,

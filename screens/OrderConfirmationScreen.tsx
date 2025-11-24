@@ -3,13 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { useOrderConfirmationViewModel } from '../viewmodels/OrderConfirmationViewModel';
@@ -23,6 +23,11 @@ interface OrderItem {
   restaurant?: string;
   image: string;
   quantity: number;
+  // ✅ NUEVOS CAMPOS PARA PROMOCIONES
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
+  originalPrice?: number;
 }
 
 interface OrderConfirmationScreenProps {
@@ -185,19 +190,45 @@ export function OrderConfirmationScreen({
                     source={{ uri: item.image }}
                     style={styles.itemImage}
                   />
+                  {/* ✅ NUEVO: Badge de promoción si existe */}
+                  {item.hasPromotion && item.promotionDiscount && (
+                    <View style={styles.itemPromotionBadge}>
+                      <Text style={styles.itemPromotionText}>
+                        {item.promotionDiscount}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <View style={styles.itemDetails}>
                   <View style={styles.itemHeader}>
                     <View style={styles.itemInfo}>
                       <Text style={styles.itemName}>{item.name}</Text>
+                      {/* ✅ NUEVO: Título de promoción */}
+                      {item.hasPromotion && item.promotionTitle && (
+                        <Text style={styles.itemPromotionTitle}>
+                          🎁 {item.promotionTitle}
+                        </Text>
+                      )}
                       {item.quantity > 1 && (
                         <Text style={styles.itemQuantityLabel}>x{item.quantity}</Text>
                       )}
                     </View>
                     <View style={styles.itemPriceContainer}>
+                      {/* ✅ NUEVO: Mostrar precio original tachado si hay promoción */}
+                      {item.hasPromotion && item.originalPrice && (
+                        <Text style={styles.itemOriginalPrice}>
+                          {formatPrice(item.originalPrice * item.quantity)}
+                        </Text>
+                      )}
                       <Text style={styles.itemPrice}>
                         {formatPrice(item.price * item.quantity)}
                       </Text>
+                      {/* ✅ NUEVO: Mostrar ahorro */}
+                      {item.hasPromotion && item.originalPrice && (
+                        <Text style={styles.itemSavings}>
+                          Ahorras {formatPrice((item.originalPrice - item.price) * item.quantity)}
+                        </Text>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -476,10 +507,26 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 12,
     overflow: 'hidden',
+    position: 'relative',
   },
   itemImage: {
     width: '100%',
     height: '100%',
+  },
+  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
+  itemPromotionBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  itemPromotionText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   itemDetails: {
     flex: 1,
@@ -497,6 +544,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  itemPromotionTitle: {
+    fontSize: 12,
+    color: '#F97316',
+    fontWeight: '500',
+    marginTop: 2,
+  },
   itemQuantityLabel: {
     color: '#6B7280',
     fontSize: 14,
@@ -506,10 +559,22 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginLeft: 8,
   },
+  itemOriginalPrice: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
   itemPrice: {
     color: '#1F2937',
     fontSize: 16,
     fontWeight: '500',
+  },
+  itemSavings: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '600',
+    marginTop: 2,
   },
   totalsContainer: {
     borderTopWidth: 1,

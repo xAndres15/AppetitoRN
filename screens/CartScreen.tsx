@@ -3,12 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { CartItem, useCartViewModel } from '../viewmodels/CartViewModel';
@@ -103,6 +103,12 @@ export function CartScreen({
                     source={{ uri: item.image }}
                     style={styles.itemImage}
                   />
+                  {/* ✅ NUEVO: Badge de promoción */}
+                  {item.hasPromotion && item.promotionDiscount && (
+                    <View style={styles.promotionBadge}>
+                      <Text style={styles.promotionText}>{item.promotionDiscount}</Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.itemDetails}>
@@ -111,6 +117,12 @@ export function CartScreen({
                       <Text style={styles.itemName} numberOfLines={1}>
                         {item.name}
                       </Text>
+                      {/* ✅ NUEVO: Título de promoción */}
+                      {item.hasPromotion && item.promotionTitle && (
+                        <Text style={styles.promotionTitle}>
+                          🎁 {item.promotionTitle}
+                        </Text>
+                      )}
                       {item.restaurant && (
                         <Text style={styles.restaurantName}>
                           {item.restaurant}
@@ -128,9 +140,23 @@ export function CartScreen({
                   </View>
 
                   <View style={styles.itemFooter}>
-                    <Text style={styles.itemPrice}>
-                      {formatPrice(item.price)}
-                    </Text>
+                    <View>
+                      {/* ✅ NUEVO: Precio original tachado si hay promoción */}
+                      {item.hasPromotion && item.originalPrice && (
+                        <Text style={styles.originalPrice}>
+                          {formatPrice(item.originalPrice)}
+                        </Text>
+                      )}
+                      <Text style={styles.itemPrice}>
+                        {formatPrice(item.discountedPrice || item.price)}
+                      </Text>
+                      {/* ✅ NUEVO: Ahorro */}
+                      {item.hasPromotion && item.originalPrice && item.discountedPrice && (
+                        <Text style={styles.savings}>
+                          Ahorras {formatPrice(item.originalPrice - item.discountedPrice)}
+                        </Text>
+                      )}
+                    </View>
 
                     <View style={styles.quantityControls}>
                       <TouchableOpacity
@@ -260,10 +286,26 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 12,
     overflow: 'hidden',
+    position: 'relative',
   },
   itemImage: {
     width: '100%',
     height: '100%',
+  },
+  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
+  promotionBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  promotionText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   itemImageSkeleton: {
     width: 96,
@@ -292,6 +334,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
+  promotionTitle: {
+    fontSize: 12,
+    color: '#F97316',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
   restaurantName: {
     color: '#6B7280',
     fontSize: 14,
@@ -304,10 +352,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  originalPrice: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
   itemPrice: {
     color: '#F97316',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  savings: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '600',
+    marginTop: 2,
   },
   quantityControls: {
     flexDirection: 'row',

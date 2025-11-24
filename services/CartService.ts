@@ -1,9 +1,9 @@
 // services/CartService.ts
 import {
-    auth,
-    getCartItems,
-    removeFromCart,
-    updateCartItemQuantity
+  auth,
+  getCartItems,
+  removeFromCart,
+  updateCartItemQuantity
 } from '../lib/firebase';
 
 export const CartService = {
@@ -24,7 +24,13 @@ export const CartService = {
           image: item.product?.image || '',
           quantity: item.quantity,
           restaurantId: item.restaurantId,
-          restaurant: 'Appetito'
+          restaurant: 'Appetito',
+          // ✅ AGREGAR DATOS DE PROMOCIÓN DESDE FIREBASE
+          hasPromotion: item.hasPromotion,
+          promotionDiscount: item.promotionDiscount,
+          promotionTitle: item.promotionTitle,
+          originalPrice: item.originalPrice,
+          discountedPrice: item.discountedPrice,
         }))
       };
     }

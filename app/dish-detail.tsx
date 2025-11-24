@@ -38,11 +38,20 @@ export default function DishDetail() {
     createdAt: Number(getParam(params.createdAt)) || Date.now(),
   };
 
+  // ✅ NUEVO: Datos de promoción
+  const hasPromotion = getParam(params.hasPromotion) === 'true';
+  const promotionDiscount = getParam(params.promotionDiscount);
+  const promotionTitle = getParam(params.promotionTitle);
+
   return (
     <DishDetailScreen
       dish={dish}
       onNavigateBack={() => router.back()}
       onAddToCart={() => router.push('/(tabs)/cart')}
+      // ✅ NUEVO: Pasar info de promoción
+      hasPromotion={hasPromotion}
+      promotionDiscount={promotionDiscount}
+      promotionTitle={promotionTitle}
     />
   );
 }

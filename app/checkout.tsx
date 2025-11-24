@@ -23,10 +23,15 @@ export default function Checkout() {
         const formattedItems = result.items.map(item => ({
           id: item.productId,
           name: item.product?.name || 'Producto',
-          price: item.product?.price || 0,
+          price: item.discountedPrice || item.product?.price || 0, // ✅ Usar precio con descuento
           image: item.product?.image || '',
           quantity: item.quantity,
           restaurantId: item.restaurantId,
+          // ✅ CAMPOS DE PROMOCIÓN
+          hasPromotion: item.hasPromotion,
+          promotionDiscount: item.promotionDiscount,
+          promotionTitle: item.promotionTitle,
+          originalPrice: item.originalPrice,
         }));
         setItems(formattedItems);
       }

@@ -77,12 +77,10 @@ export interface RestaurantInfo {
   priceRange?: string;
   amenities?: string[];
   paymentMethods?: string[];
-  // Redes sociales
   facebook?: string; 
   instagram?: string; 
   twitter?: string; 
   tiktok?: string; 
-  // Configuración de notificaciones
   notificationSettings?: {
     newOrders: boolean;
     newReservations: boolean;
@@ -144,10 +142,31 @@ export interface CartItem {
   restaurantId: string;
   quantity: number;
   addedAt: number;
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
+  originalPrice?: number;
+  discountedPrice?: number;
 }
 
 export interface CartItemWithProduct extends CartItem {
   product?: Product;
+}
+
+export interface Promotion {
+  id?: string;
+  restaurantId: string;
+  productId: string;
+  title: string;
+  description: string;
+  discount: string;
+  image: string;
+  active: boolean;
+  minOrder?: number;
+  deliveryTime?: string;
+  productIds?: string[];
+  createdAt: number;
+  expiresAt?: number;
 }
 
 // ============================================
@@ -928,7 +947,20 @@ export const updateReservationStatus = async (reservationId: string, restaurantI
 // FUNCIONES PARA CARRITO
 // ============================================
 
-export const addToCart = async (userId: string, productId: string, restaurantId: string, quantity: number = 1) => {
+// ✅ FUNCIÓN ACTUALIZADA CON SOPORTE PARA PROMOCIONES
+export const addToCart = async (
+  userId: string, 
+  productId: string, 
+  restaurantId: string, 
+  quantity: number = 1,
+  promotionData?: {
+    hasPromotion: boolean;
+    promotionDiscount: string;
+    promotionTitle: string;
+    originalPrice: number;
+    discountedPrice: number;
+  }
+) => {
   try {
     const productResult = await getProductById(productId, restaurantId);
     if (!productResult.success) {
@@ -944,12 +976,21 @@ export const addToCart = async (userId: string, productId: string, restaurantId:
         [`cart/${userId}/${productId}/quantity`]: currentQuantity + quantity
       });
     } else {
-      await set(ref(database, `cart/${userId}/${productId}`), {
+      const cartItem: CartItem = {
         productId,
         restaurantId,
         quantity,
-        addedAt: Date.now()
-      });
+        addedAt: Date.now(),
+        ...(promotionData && {
+          hasPromotion: promotionData.hasPromotion,
+          promotionDiscount: promotionData.promotionDiscount,
+          promotionTitle: promotionData.promotionTitle,
+          originalPrice: promotionData.originalPrice,
+          discountedPrice: promotionData.discountedPrice,
+        })
+      };
+      
+      await set(ref(database, `cart/${userId}/${productId}`), cartItem);
     }
     
     return { success: true };
@@ -1129,9 +1170,6 @@ export async function getAdminData(userId: string): Promise<{
 // FUNCIONES PARA SUBIR IMÁGENES (BASE64)
 // ============================================
 
-/**
- * Convertir imagen de producto a base64
- */
 export const uploadProductImage = async (file: Blob, productId: string) => {
   try {
     console.log('📸 Convirtiendo imagen a base64...');
@@ -1155,9 +1193,6 @@ export const uploadProductImage = async (file: Blob, productId: string) => {
   }
 };
 
-/**
- * Convertir imagen de restaurante a base64
- */
 export const uploadRestaurantImage = async (file: Blob, restaurantId: string) => {
   try {
     console.log('📸 Convirtiendo imagen de restaurante a base64...');
@@ -1177,6 +1212,205 @@ export const uploadRestaurantImage = async (file: Blob, restaurantId: string) =>
     return { success: true, imageURL };
   } catch (error: any) {
     console.error('❌ Error converting restaurant image to base64:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ============================================
+// FUNCIONES PARA PROMOCIONES
+// ============================================
+
+export const createPromotion = async (
+  promotionData: Omit<Promotion, 'id' | 'createdAt'>,
+  restaurantId: string
+) => {
+  try {
+    const promotionsRef = ref(database, `restaurants/${restaurantId}/promotions`);
+    const newPromotionRef = push(promotionsRef);
+    const promotionId = newPromotionRef.key;
+
+    const promotion: Promotion = {
+      ...promotionData,
+      id: promotionId!,
+      restaurantId: restaurantId,
+      createdAt: Date.now(),
+    };
+
+    await set(newPromotionRef, promotion);
+    return { success: true, promotionId, promotion };
+  } catch (error: any) {
+    console.error('Error creating promotion:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getPromotions = async (restaurantId?: string) => {
+  try {
+    if (restaurantId) {
+      const dbRef = ref(database);
+      const snapshot = await get(
+        child(dbRef, `restaurants/${restaurantId}/promotions`)
+      );
+
+      if (snapshot.exists()) {
+        const promotions: Promotion[] = [];
+        snapshot.forEach((childSnapshot) => {
+          promotions.push({
+            id: childSnapshot.key,
+            ...childSnapshot.val(),
+          });
+        });
+        promotions.sort((a, b) => b.createdAt - a.createdAt);
+        return { success: true, promotions };
+      }
+      return { success: true, promotions: [] };
+    } else {
+      const restaurantsResult = await getAllRestaurants();
+      if (!restaurantsResult.success || !restaurantsResult.restaurants) {
+        return { success: true, promotions: [] };
+      }
+
+      const allPromotions: Promotion[] = [];
+      for (const restaurant of restaurantsResult.restaurants) {
+        const result = await getPromotions(restaurant.id!);
+        if (result.success && result.promotions) {
+          allPromotions.push(...result.promotions);
+        }
+      }
+
+      allPromotions.sort((a, b) => b.createdAt - a.createdAt);
+      return { success: true, promotions: allPromotions };
+    }
+  } catch (error: any) {
+    console.error('Error getting promotions:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getActivePromotions = async (restaurantId?: string) => {
+  try {
+    const result = await getPromotions(restaurantId);
+    if (result.success && result.promotions) {
+      const now = Date.now();
+      const activePromotions = result.promotions.filter(
+        (promo) =>
+          promo.active && (!promo.expiresAt || promo.expiresAt > now)
+      );
+      return { success: true, promotions: activePromotions };
+    }
+    return result;
+  } catch (error: any) {
+    console.error('Error getting active promotions:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getPromotionById = async (
+  promotionId: string,
+  restaurantId: string
+) => {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(
+      child(dbRef, `restaurants/${restaurantId}/promotions/${promotionId}`)
+    );
+
+    if (snapshot.exists()) {
+      return {
+        success: true,
+        promotion: {
+          id: promotionId,
+          ...snapshot.val(),
+        },
+      };
+    }
+
+    return { success: false, error: 'Promoción no encontrada' };
+  } catch (error: any) {
+    console.error('Error getting promotion:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const updatePromotion = async (
+  promotionId: string,
+  restaurantId: string,
+  updates: Partial<Promotion>
+) => {
+  try {
+    const promotionUpdates: any = {};
+    Object.keys(updates).forEach((key) => {
+      if (key !== 'id' && key !== 'createdAt' && key !== 'restaurantId') {
+        promotionUpdates[
+          `restaurants/${restaurantId}/promotions/${promotionId}/${key}`
+        ] = (updates as any)[key];
+      }
+    });
+
+    await update(ref(database), promotionUpdates);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating promotion:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deletePromotion = async (
+  promotionId: string,
+  restaurantId: string
+) => {
+  try {
+    await remove(
+      ref(database, `restaurants/${restaurantId}/promotions/${promotionId}`)
+    );
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting promotion:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const uploadPromotionImage = async (file: Blob, promotionId: string) => {
+  try {
+    console.log('📸 Convirtiendo imagen de promoción a base64...');
+
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const imageURL = await base64Promise;
+    console.log('✅ Imagen de promoción convertida a base64, longitud:', imageURL.length);
+
+    return { success: true, imageURL };
+  } catch (error: any) {
+    console.error('❌ Error converting promotion image to base64:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getProductPromotions = async (
+  productId: string,
+  restaurantId: string
+) => {
+  try {
+    const result = await getActivePromotions(restaurantId);
+    if (result.success && result.promotions) {
+      const productPromotions = result.promotions.filter(
+        (promo) =>
+          !promo.productIds ||
+          promo.productIds.length === 0 ||
+          promo.productIds.includes(productId)
+      );
+      return { success: true, promotions: productPromotions };
+    }
+    return result;
+  } catch (error: any) {
+    console.error('Error getting product promotions:', error);
     return { success: false, error: error.message };
   }
 };
