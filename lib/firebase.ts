@@ -830,9 +830,13 @@ export async function getUserOrders(
 
 export const updateOrderStatus = async (orderId: string, restaurantId: string, status: Order['status']) => {
   try {
+    // ✅ Actualizar en AMBAS ubicaciones
     await update(ref(database), {
       [`restaurants/${restaurantId}/orders/${orderId}/status`]: status,
-      [`restaurants/${restaurantId}/orders/${orderId}/updatedAt`]: Date.now()
+      [`restaurants/${restaurantId}/orders/${orderId}/updatedAt`]: Date.now(),
+      // ✅ AGREGAR: También actualizar en la ubicación global
+      [`orders/${orderId}/status`]: status,
+      [`orders/${orderId}/updatedAt`]: Date.now()
     });
     return { success: true };
   } catch (error: any) {

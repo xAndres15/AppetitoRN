@@ -1,4 +1,5 @@
 // viewmodels/OrderConfirmationViewModel.ts
+import { getDatabase, off, onValue, ref } from 'firebase/database';
 import { useEffect, useState } from 'react';
 import { auth, createOrder, OrderItem as FirebaseOrderItem, getRestaurantInfo, getUserData } from '../lib/firebase';
 
@@ -38,6 +39,34 @@ export function useOrderConfirmationViewModel(
     }
   }, []);
 
+  // Listener en tiempo real para detectar cambios de estado
+  useEffect(() => {
+    const currentOrderId = savedOrderId || orderId;
+    if (!currentOrderId || !restaurantId) return;
+
+    const db = getDatabase();
+    // ✅ CAMBIO: Escuchar en la ubicación donde el admin SÍ actualiza
+    const orderRef = ref(db, `restaurants/${restaurantId}/orders/${currentOrderId}`);
+
+    // Listener en tiempo real - se ejecuta cada vez que cambia el pedido en Firebase
+    const unsubscribe = onValue(orderRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const orderData = snapshot.val();
+        if (orderData.status) {
+          setOrderStatus(orderData.status);
+          (orderData.status);
+        }
+      }
+    }, (error) => {
+      console.error('Error en listener de pedido:', error);
+    });
+
+    // Cleanup: desuscribirse cuando el componente se desmonte o cambie el orderId
+    return () => {
+      off(orderRef);
+    };
+  }, [savedOrderId, orderId, restaurantId]); // ✅ Agregar restaurantId a las dependencias
+
   const loadOrderData = async () => {
     setIsLoading(true);
     try {
@@ -65,86 +94,80 @@ export function useOrderConfirmationViewModel(
     }
   };
 
-  // viewmodels/OrderConfirmationViewModel.ts
-// ... todo el código anterior igual ...
+  const saveOrderToFirebase = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user || !items || !restaurantId) return;
 
-const saveOrderToFirebase = async () => {
-  try {
-    const user = auth.currentUser;
-    if (!user || !items || !restaurantId) return;
-
-    // Cargar nombre del restaurante primero si no lo tenemos
-    let restName = restaurantName;
-    let restImage = restaurantImage;
-    
-    if (!restName) {
-      const restaurantResult = await getRestaurantInfo(restaurantId);
-      if (restaurantResult.success && restaurantResult.info) {
-        restName = restaurantResult.info.name || 'Restaurante';
-        restImage = restaurantResult.info.logo || restaurantResult.info.coverImage || '';
-        setRestaurantName(restName);
-        setRestaurantImage(restImage);
+      // Cargar nombre del restaurante primero si no lo tenemos
+      let restName = restaurantName;
+      let restImage = restaurantImage;
+      
+      if (!restName) {
+        const restaurantResult = await getRestaurantInfo(restaurantId);
+        if (restaurantResult.success && restaurantResult.info) {
+          restName = restaurantResult.info.name || 'Restaurante';
+          restImage = restaurantResult.info.logo || restaurantResult.info.coverImage || '';
+          setRestaurantName(restName);
+          setRestaurantImage(restImage);
+        }
       }
-    }
 
-    // Cargar dirección del usuario
-    let address = deliveryAddress;
-    if (!address) {
+      // Cargar dirección del usuario
+      let address = deliveryAddress;
+      if (!address) {
+        const userResult = await getUserData(user.uid);
+        if (userResult.success && userResult.data) {
+          address = userResult.data.address || 'Dirección no disponible';
+          setDeliveryAddress(address);
+        }
+      }
+
+      // Cargar nombre y teléfono del usuario
       const userResult = await getUserData(user.uid);
-      if (userResult.success && userResult.data) {
-        address = userResult.data.address || 'Dirección no disponible';
-        setDeliveryAddress(address);
+      const userName = userResult.success && userResult.data 
+        ? `${userResult.data.name || ''} ${userResult.data.lastName || ''}`.trim() 
+        : 'Usuario';
+      const userPhone = userResult.success && userResult.data 
+        ? userResult.data.phone || '' 
+        : '';
+
+      // Convertir items al tipo correcto FirebaseOrderItem[]
+      const orderItems: FirebaseOrderItem[] = items.map(item => ({
+        productId: item.id,
+        productName: item.productName,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const orderData = {
+        userId: user.uid,
+        userName: userName,
+        userPhone: userPhone,
+        restaurantId: restaurantId,
+        restaurantName: restName || 'Restaurante',
+        restaurantImage: restImage || '',
+        items: orderItems,
+        subtotal: subtotal || 0,
+        deliveryFee: deliveryFee || 0,
+        tip: tip || 0,
+        total: total,
+        deliveryAddress: address,
+        deliveryTime: deliveryTime || '30-40 min',
+        paymentMethod: 'Efectivo',
+        status: 'pending' as const,
+        notes: '',
+      };
+
+      const result = await createOrder(orderData, restaurantId);
+
+      if (result.success && result.orderId) {
+        setSavedOrderId(result.orderId);
       }
+    } catch (error: any) {
+      console.error('Error saving order:', error);
     }
-
-    // Cargar nombre y teléfono del usuario
-    const userResult = await getUserData(user.uid);
-    const userName = userResult.success && userResult.data 
-      ? `${userResult.data.name || ''} ${userResult.data.lastName || ''}`.trim() 
-      : 'Usuario';
-    const userPhone = userResult.success && userResult.data 
-      ? userResult.data.phone || '' 
-      : '';
-
-    // Convertir items al tipo correcto FirebaseOrderItem[]
-    const orderItems: FirebaseOrderItem[] = items.map(item => ({
-      productId: item.id,
-      productName: item.productName,
-      price: item.price,
-      quantity: item.quantity,
-    }));
-
-    // ← AQUÍ ESTÁ EL FIX: Asegurar que orderData tenga TODAS las propiedades requeridas
-    const orderData = {
-      userId: user.uid,
-      userName: userName,
-      userPhone: userPhone,
-      restaurantId: restaurantId, // ← CRÍTICO: Debe estar aquí
-      restaurantName: restName || 'Restaurante',
-      restaurantImage: restImage || '',
-      items: orderItems,
-      subtotal: subtotal || 0,
-      deliveryFee: deliveryFee || 0,
-      tip: tip || 0,
-      total: total,
-      deliveryAddress: address,
-      deliveryTime: deliveryTime || '30-40 min',
-      paymentMethod: 'Efectivo',
-      status: 'pending' as const,
-      notes: '',
-    };
-
-    const result = await createOrder(orderData);
-
-    if (result.success && result.orderId) {
-      setSavedOrderId(result.orderId);
-    }
-  } catch (error: any) {
-    console.error('Error saving order:', error);
-  }
-};
-
-// ... resto del código igual ...
+  };
 
   const formatPrice = (price: number): string => {
     return `$${price.toLocaleString('es-CO')}`;
@@ -177,6 +200,8 @@ const saveOrderToFirebase = async () => {
         return 50;
       case 'preparing':
         return 75;
+      case 'delivering':
+        return 90;
       case 'delivered':
         return 100;
       default:
