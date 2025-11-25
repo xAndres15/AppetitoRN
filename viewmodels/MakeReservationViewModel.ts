@@ -105,6 +105,8 @@ export function useMakeReservationViewModel(restaurant: Restaurant) {
         numberOfPeople: parseInt(numberOfPeople),
         status: 'pending' as const,
         restaurantId: restaurant.firebaseId,
+        restaurantName: restaurant.name,
+        restaurantAddress: restaurant.location || restaurant.address || 'Ubicación no disponible',
       };
 
       const result = await ReservationService.createReservation(
