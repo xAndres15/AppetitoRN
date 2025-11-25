@@ -107,18 +107,26 @@ export function useCheckoutViewModel(subtotal: number) {
 
       const restaurantId = cartResult.items[0].restaurantId;
 
-      // ✅ ACTUALIZAR: Construir los items de la orden CON DATOS DE PROMOCIÓN
-      const orderItems = cartResult.items.map(item => ({
-        productId: item.productId,
-        productName: item.product?.name || 'Producto',
-        quantity: item.quantity,
-        price: item.discountedPrice || item.product?.price || 0, // ← ✅ PRECIO CON DESCUENTO
-        // ✅ AGREGAR DATOS DE PROMOCIÓN
-        hasPromotion: item.hasPromotion,
-        promotionDiscount: item.promotionDiscount,
-        promotionTitle: item.promotionTitle,
-        originalPrice: item.originalPrice,
-      }));
+      // ✅ CORREGIDO: Construir los items de la orden evitando valores undefined
+      const orderItems = cartResult.items.map(item => {
+        // Base del item (siempre presente)
+        const orderItem: any = {
+          productId: item.productId,
+          productName: item.product?.name || 'Producto',
+          quantity: item.quantity,
+          price: item.discountedPrice || item.product?.price || 0,
+        };
+
+        // ✅ SOLO agregar campos de promoción si existen (evita undefined)
+        if (item.hasPromotion && item.promotionDiscount) {
+          orderItem.hasPromotion = true;
+          orderItem.promotionDiscount = item.promotionDiscount;
+          orderItem.promotionTitle = item.promotionTitle || '';
+          orderItem.originalPrice = item.originalPrice || item.product?.price || 0;
+        }
+
+        return orderItem;
+      });
 
       // Crear el objeto de orden
       const orderData: any = {
