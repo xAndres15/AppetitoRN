@@ -526,6 +526,11 @@ const renderPedidosTab = () => (
                 params: {
                   orderId: order.id,
                   restaurantId: order.restaurantId,
+                  subtotal: (order.subtotal || 0).toString(),
+                  deliveryFee: (order.deliveryFee || 0).toString(),
+                  tip: (order.tip || 0).toString(),
+                  deliveryTime: order.deliveryTime || '30-45 min',
+                  items: JSON.stringify(order.items || []),
                 },
               });
             }}

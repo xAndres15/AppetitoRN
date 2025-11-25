@@ -18,7 +18,7 @@ const { width } = Dimensions.get('window');
 
 interface OrderItem {
   id: string;
-  name: string;
+  productName: string;
   price: number;
   restaurant?: string;
   image: string;
@@ -183,8 +183,8 @@ export function OrderConfirmationScreen({
           <Text style={styles.detailsTitle}>Detalles del pedido</Text>
 
           <View style={styles.itemsList}>
-            {items.map((item) => (
-              <View key={item.id} style={styles.itemRow}>
+            {items.map((item, index) => (
+              <View key={item.id || `item-${index}`} style={styles.itemRow}>
                 <View style={styles.itemImageContainer}>
                   <ImageWithFallback
                     source={{ uri: item.image }}
@@ -202,7 +202,7 @@ export function OrderConfirmationScreen({
                 <View style={styles.itemDetails}>
                   <View style={styles.itemHeader}>
                     <View style={styles.itemInfo}>
-                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemName}>{item.productName}</Text>
                       {/* ✅ NUEVO: Título de promoción */}
                       {item.hasPromotion && item.promotionTitle && (
                         <Text style={styles.itemPromotionTitle}>

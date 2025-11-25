@@ -115,6 +115,7 @@ export function useCheckoutViewModel(subtotal: number) {
           productName: item.product?.name || 'Producto',
           quantity: item.quantity,
           price: item.discountedPrice || item.product?.price || 0,
+          image: item.product?.image || '', // ✅ AGREGAR IMAGEN
         };
 
         // ✅ SOLO agregar campos de promoción si existen (evita undefined)

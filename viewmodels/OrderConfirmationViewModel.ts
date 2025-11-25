@@ -4,7 +4,7 @@ import { auth, createOrder, OrderItem as FirebaseOrderItem, getRestaurantInfo, g
 
 interface OrderItem {
   id: string;
-  name: string;
+  productName: string;
   price: number;
   restaurant?: string;
   image: string;
@@ -109,7 +109,7 @@ const saveOrderToFirebase = async () => {
     // Convertir items al tipo correcto FirebaseOrderItem[]
     const orderItems: FirebaseOrderItem[] = items.map(item => ({
       productId: item.id,
-      productName: item.name,
+      productName: item.productName,
       price: item.price,
       quantity: item.quantity,
     }));
