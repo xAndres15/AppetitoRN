@@ -466,6 +466,14 @@ const renderFavoritosTab = () => (
                         params: {
                            reservationId: reservation.id,
                            restaurantId: reservation.restaurantId,
+                           date: reservation.date,
+                           time: reservation.time,
+                           numberOfPeople: reservation.numberOfPeople.toString(),
+                           restaurantName: reservation.restaurantName || 'Restaurante',
+                           restaurantLocation: reservation.restaurantAddress || reservation.deliveryAddress || 'Ubicación no disponible',
+                           name: reservation.userName || '',
+                           email: reservation.userEmail || '',
+                           phone: reservation.userPhone || '',
                        },
                    });
                  }}

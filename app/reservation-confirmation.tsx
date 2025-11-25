@@ -40,14 +40,14 @@ export default function ReservationConfirmation() {
     const reservationData = {
       reservationId: getParam(params.reservationId),
       restaurantId: getParam(params.restaurantId),
-      date: '',
-      time: '',
-      numberOfPeople: '0',
-      name: '',
-      email: '',
-      phone: '',
-      restaurantName: '',
-      restaurantLocation: '',
+      date: getParam(params.date),
+      time: getParam(params.time),
+      numberOfPeople: getParam(params.numberOfPeople),
+      name: getParam(params.name),
+      email: getParam(params.email),
+      phone: getParam(params.phone),
+      restaurantName: getParam(params.restaurantName),
+      restaurantLocation: getParam(params.restaurantLocation),
     };
 
     return (
