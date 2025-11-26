@@ -46,12 +46,12 @@ export default function AdminMenu() {
       ref={screenRef}
       restaurantId={restaurantId}
       onNavigateBack={() => router.back()}
-      onNavigateToDashboard={() => router.push('/admin/dashboard')} // ← NUEVO
+      onNavigateToDashboard={() => router.push('/admin/dashboard')}
       onNavigateToOrders={() => router.push('/admin/orders')}
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}
       onNavigateToSettings={() => router.push('/admin/settings')}
-      onNavigateToPromotions={() => {}}
+      onNavigateToPromotions={() => router.push('/admin/promotions')}
       onNavigateToAddProduct={() =>
         router.push({
           pathname: '/admin/add-product',

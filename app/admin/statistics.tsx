@@ -41,7 +41,7 @@ export default function AdminStatistics() {
       onNavigateToReservations={() => router.push('/admin/reservations')}
       onNavigateToMenu={() => router.push('/admin/menu')}
       onNavigateToSettings={() => router.push('/admin/settings')}
-      onNavigateToPromotions={() => {}}
+      onNavigateToPromotions={() => router.push('/admin/promotions')}
     />
   );
 }

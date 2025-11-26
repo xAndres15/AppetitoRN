@@ -62,7 +62,7 @@ export default function AdminOrders() {
       onNavigateToMenu={() => router.push('/admin/menu')}
       onNavigateToStatistics={() => router.push('/admin/statistics')}
       onNavigateToSettings={() => router.push('/admin/settings')}
-      onNavigateToPromotions={() => {}}
+      onNavigateToPromotions={() => router.push('/admin/promotions')}
       onNavigateToOrderDetail={handleNavigateToOrderDetail}
     />
   );
