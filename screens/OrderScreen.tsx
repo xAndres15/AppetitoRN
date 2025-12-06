@@ -236,7 +236,7 @@ export function OrderScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FBF2E3',
   },
   header: {
     paddingTop: 60,

@@ -236,7 +236,7 @@ export function OffersScreen({ onNavigateBack, onNavigateToProduct }: OffersScre
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF2E3',
   },
   loadingOverlay: {
     position: 'absolute',

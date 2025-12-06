@@ -223,7 +223,7 @@ export function CartScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF2E3',
   },
   header: {
     paddingTop: 60,

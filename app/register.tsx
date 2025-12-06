@@ -59,6 +59,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Nombre"
+            placeholderTextColor="#999"
             style={styles.input}
             value={form.nombre}
             onChangeText={(v) => handleChange("nombre", v)}
@@ -66,6 +67,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Apellido"
+            placeholderTextColor="#999"
             style={styles.input}
             value={form.apellido}
             onChangeText={(v) => handleChange("apellido", v)}
@@ -73,6 +75,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Correo electrónico"
+            placeholderTextColor="#999"
             style={styles.input}
             value={form.email}
             onChangeText={(v) => handleChange("email", v)}
@@ -82,6 +85,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Número de celular"
+            placeholderTextColor="#999"
             style={styles.input}
             value={form.telefono}
             onChangeText={(v) => handleChange("telefono", v)}
@@ -90,6 +94,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Dirección"
+            placeholderTextColor="#999"
             style={styles.input}
             value={form.direccion}
             onChangeText={(v) => handleChange("direccion", v)}
@@ -97,6 +102,7 @@ export default function Register() {
 
           <TextInput
             placeholder="Contraseña"
+            placeholderTextColor="#999"
             secureTextEntry
             style={styles.input}
             value={form.password}

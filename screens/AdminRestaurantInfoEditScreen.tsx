@@ -3,15 +3,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { useAdminRestaurantInfoEditViewModel } from '../viewmodels/AdminRestaurantInfoEditViewModel';
@@ -285,7 +285,7 @@ export function AdminRestaurantInfoEditScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FBF2E3',
   },
   loadingContainer: {
     flex: 1,
