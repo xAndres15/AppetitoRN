@@ -1,15 +1,22 @@
 // viewmodels/OrderConfirmationViewModel.ts
 import { getDatabase, off, onValue, ref } from 'firebase/database';
 import { useEffect, useState } from 'react';
-import { auth, createOrder, OrderItem as FirebaseOrderItem, getRestaurantInfo, getUserData } from '../lib/firebase';
+import { auth, createOrder, OrderItem as FirebaseOrderItem, getRestaurantInfo, getUserData, hasUserReviewedOrder } from '../lib/firebase';
 
+// ✅ INTERFACE FLEXIBLE PARA SOPORTAR AMBOS FORMATOS
 interface OrderItem {
-  id: string;
-  productName: string;
+  id?: string;
+  productId?: string;
+  productName?: string;
+  name?: string;
   price: number;
   restaurant?: string;
-  image: string;
+  image?: string;
   quantity: number;
+  hasPromotion?: boolean;
+  promotionDiscount?: string;
+  promotionTitle?: string;
+  originalPrice?: number;
 }
 
 export function useOrderConfirmationViewModel(
@@ -27,17 +34,44 @@ export function useOrderConfirmationViewModel(
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [savedOrderId, setSavedOrderId] = useState(orderId);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [checkingReview, setCheckingReview] = useState(true);
 
   const total = (subtotal || 0) + (deliveryFee || 0) + (tip || 0);
   const estimatedTime = deliveryTime || '30-40 min';
 
   useEffect(() => {
     loadOrderData();
-    // Solo guardar el pedido si no tenemos un orderId (nuevo pedido)
     if (!orderId && items && items.length > 0 && restaurantId) {
       saveOrderToFirebase();
     }
   }, []);
+
+  // Verificar si el usuario ya calificó este pedido
+  useEffect(() => {
+    const checkIfReviewed = async () => {
+      const currentOrderId = savedOrderId || orderId;
+      const user = auth.currentUser;
+
+      if (!currentOrderId || !user) {
+        setCheckingReview(false);
+        return;
+      }
+
+      setCheckingReview(true);
+      const result = await hasUserReviewedOrder(user.uid, currentOrderId);
+      
+      if (result.success) {
+        setHasReviewed(result.hasReviewed);
+      }
+      
+      setCheckingReview(false);
+    };
+
+    if (orderStatus === 'delivered') {
+      checkIfReviewed();
+    }
+  }, [orderStatus, savedOrderId, orderId]);
 
   // Listener en tiempo real para detectar cambios de estado
   useEffect(() => {
@@ -45,32 +79,27 @@ export function useOrderConfirmationViewModel(
     if (!currentOrderId || !restaurantId) return;
 
     const db = getDatabase();
-    // ✅ CAMBIO: Escuchar en la ubicación donde el admin SÍ actualiza
     const orderRef = ref(db, `restaurants/${restaurantId}/orders/${currentOrderId}`);
 
-    // Listener en tiempo real - se ejecuta cada vez que cambia el pedido en Firebase
     const unsubscribe = onValue(orderRef, (snapshot) => {
       if (snapshot.exists()) {
         const orderData = snapshot.val();
         if (orderData.status) {
           setOrderStatus(orderData.status);
-          (orderData.status);
         }
       }
     }, (error) => {
       console.error('Error en listener de pedido:', error);
     });
 
-    // Cleanup: desuscribirse cuando el componente se desmonte o cambie el orderId
     return () => {
       off(orderRef);
     };
-  }, [savedOrderId, orderId, restaurantId]); // ✅ Agregar restaurantId a las dependencias
+  }, [savedOrderId, orderId, restaurantId]);
 
   const loadOrderData = async () => {
     setIsLoading(true);
     try {
-      // Cargar información del restaurante
       if (restaurantId) {
         const restaurantResult = await getRestaurantInfo(restaurantId);
         if (restaurantResult.success && restaurantResult.info) {
@@ -79,7 +108,6 @@ export function useOrderConfirmationViewModel(
         }
       }
 
-      // Cargar dirección del usuario
       const user = auth.currentUser;
       if (user) {
         const userResult = await getUserData(user.uid);
@@ -99,7 +127,6 @@ export function useOrderConfirmationViewModel(
       const user = auth.currentUser;
       if (!user || !items || !restaurantId) return;
 
-      // Cargar nombre del restaurante primero si no lo tenemos
       let restName = restaurantName;
       let restImage = restaurantImage;
       
@@ -113,7 +140,6 @@ export function useOrderConfirmationViewModel(
         }
       }
 
-      // Cargar dirección del usuario
       let address = deliveryAddress;
       if (!address) {
         const userResult = await getUserData(user.uid);
@@ -123,7 +149,6 @@ export function useOrderConfirmationViewModel(
         }
       }
 
-      // Cargar nombre y teléfono del usuario
       const userResult = await getUserData(user.uid);
       const userName = userResult.success && userResult.data 
         ? `${userResult.data.name || ''} ${userResult.data.lastName || ''}`.trim() 
@@ -132,10 +157,10 @@ export function useOrderConfirmationViewModel(
         ? userResult.data.phone || '' 
         : '';
 
-      // Convertir items al tipo correcto FirebaseOrderItem[]
+      // ✅ MAPEO FLEXIBLE PARA SOPORTAR AMBOS FORMATOS
       const orderItems: FirebaseOrderItem[] = items.map(item => ({
-        productId: item.id,
-        productName: item.productName,
+        productId: item.productId || item.id || '',
+        productName: item.productName || item.name || 'Producto',
         price: item.price,
         quantity: item.quantity,
       }));
@@ -221,5 +246,7 @@ export function useOrderConfirmationViewModel(
     formatPrice,
     getStatusLabel,
     getProgressPercentage,
+    hasReviewed,
+    checkingReview,
   } as const;
 }

@@ -1,7 +1,7 @@
 // screens/OrderConfirmationScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -11,19 +11,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AddReviewModal } from '../components/AddReviewModal';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { useOrderConfirmationViewModel } from '../viewmodels/OrderConfirmationViewModel';
 
 const { width } = Dimensions.get('window');
 
 interface OrderItem {
-  id: string;
-  productName: string;
+  id?: string;
+  productId?: string;
+  productName?: string; // ✅ AHORA OPCIONAL
+  name?: string; // ✅ SOPORTE PARA AMBOS
   price: number;
   restaurant?: string;
-  image: string;
+  image?: string;
   quantity: number;
-  // ✅ NUEVOS CAMPOS PARA PROMOCIONES
   hasPromotion?: boolean;
   promotionDiscount?: string;
   promotionTitle?: string;
@@ -61,6 +63,8 @@ export function OrderConfirmationScreen({
     formatPrice,
     getStatusLabel,
     getProgressPercentage,
+    hasReviewed,
+    checkingReview,
   } = useOrderConfirmationViewModel(
     orderId,
     restaurantId,
@@ -71,9 +75,28 @@ export function OrderConfirmationScreen({
     deliveryTime
   );
 
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
   const displayOrderId = orderId 
     ? `#${orderId.slice(-8).toUpperCase()}` 
     : `#RFD-${Math.floor(Math.random() * 10000)}`;
+
+  // ✅ FUNCIÓN HELPER PARA OBTENER NOMBRE DEL PRODUCTO
+  const getProductName = (item: OrderItem): string => {
+    return item.productName || item.name || 'Producto sin nombre';
+  };
+
+  // ✅ FUNCIÓN HELPER PARA OBTENER ID
+  const getItemKey = (item: OrderItem, index: number): string => {
+    return item.id || item.productId || `item-${index}`;
+  };
+
+  // Mostrar botón de calificar solo si el pedido está entregado y no ha sido calificado
+  const canReview = orderStatus === 'delivered' && !hasReviewed && !checkingReview && orderId && restaurantId;
+
+  const handleReviewSubmitted = () => {
+    // El componente se actualizará automáticamente cuando hasReviewed cambie
+  };
 
   return (
     <View style={styles.container}>
@@ -184,13 +207,12 @@ export function OrderConfirmationScreen({
 
           <View style={styles.itemsList}>
             {items.map((item, index) => (
-              <View key={item.id || `item-${index}`} style={styles.itemRow}>
+              <View key={getItemKey(item, index)} style={styles.itemRow}>
                 <View style={styles.itemImageContainer}>
                   <ImageWithFallback
                     source={{ uri: item.image }}
                     style={styles.itemImage}
                   />
-                  {/* ✅ NUEVO: Badge de promoción si existe */}
                   {item.hasPromotion && item.promotionDiscount && (
                     <View style={styles.itemPromotionBadge}>
                       <Text style={styles.itemPromotionText}>
@@ -202,8 +224,8 @@ export function OrderConfirmationScreen({
                 <View style={styles.itemDetails}>
                   <View style={styles.itemHeader}>
                     <View style={styles.itemInfo}>
-                      <Text style={styles.itemName}>{item.productName}</Text>
-                      {/* ✅ NUEVO: Título de promoción */}
+                      {/* ✅ USAR FUNCIÓN HELPER */}
+                      <Text style={styles.itemName}>{getProductName(item)}</Text>
                       {item.hasPromotion && item.promotionTitle && (
                         <Text style={styles.itemPromotionTitle}>
                           🎁 {item.promotionTitle}
@@ -214,7 +236,6 @@ export function OrderConfirmationScreen({
                       )}
                     </View>
                     <View style={styles.itemPriceContainer}>
-                      {/* ✅ NUEVO: Mostrar precio original tachado si hay promoción */}
                       {item.hasPromotion && item.originalPrice && (
                         <Text style={styles.itemOriginalPrice}>
                           {formatPrice(item.originalPrice * item.quantity)}
@@ -223,7 +244,6 @@ export function OrderConfirmationScreen({
                       <Text style={styles.itemPrice}>
                         {formatPrice(item.price * item.quantity)}
                       </Text>
-                      {/* ✅ NUEVO: Mostrar ahorro */}
                       {item.hasPromotion && item.originalPrice && (
                         <Text style={styles.itemSavings}>
                           Ahorras {formatPrice((item.originalPrice - item.price) * item.quantity)}
@@ -258,6 +278,35 @@ export function OrderConfirmationScreen({
           </View>
         </View>
 
+        {/* Botón de calificar pedido */}
+        {canReview && (
+          <View style={styles.reviewContainer}>
+            <TouchableOpacity
+              onPress={() => setShowReviewModal(true)}
+              style={styles.reviewButton}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.reviewButtonGradient}
+              >
+                <Ionicons name="star" size={20} color="#fff" />
+                <Text style={styles.reviewButtonText}>Calificar este pedido</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Mensaje si ya calificó */}
+        {orderStatus === 'delivered' && hasReviewed && (
+          <View style={styles.reviewedContainer}>
+            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+            <Text style={styles.reviewedText}>Ya calificaste este pedido</Text>
+          </View>
+        )}
+
         {/* Botón nuevo pedido */}
         <View style={styles.newOrderContainer}>
           <TouchableOpacity
@@ -276,6 +325,18 @@ export function OrderConfirmationScreen({
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Modal de calificación */}
+      {orderId && restaurantId && (
+        <AddReviewModal
+          visible={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          orderId={orderId}
+          restaurantId={restaurantId}
+          items={items}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
     </View>
   );
 }
@@ -513,7 +574,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
   itemPromotionBadge: {
     position: 'absolute',
     top: 4,
@@ -609,6 +669,45 @@ const styles = StyleSheet.create({
     color: '#F97316',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  reviewContainer: {
+    marginBottom: 16,
+  },
+  reviewButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  reviewButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  reviewedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#D1FAE5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 8,
+  },
+  reviewedText: {
+    color: '#065F46',
+    fontSize: 14,
+    fontWeight: '600',
   },
   newOrderContainer: {
     marginTop: 0,

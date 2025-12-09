@@ -1,7 +1,7 @@
 // screens/DishDetailScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -12,6 +12,8 @@ import {
   View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { ReviewCard } from '../components/ReviewCard';
+import { StarRating } from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useDishDetailViewModel } from '../viewmodels/DishDetailViewModel';
 
@@ -45,6 +47,9 @@ export function DishDetailScreen({
     calculateTotalPrice,
     isAddingToCart,
     checkingFavorite,
+    reviews,
+    loadingReviews,
+    ratingStats,
   } = useDishDetailViewModel(
     dish,
     hasPromotion ? {
@@ -54,7 +59,8 @@ export function DishDetailScreen({
     } : undefined
   );
 
-  // ✅ NUEVA FUNCIÓN: Extraer porcentaje del string de descuento
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
   const parseDiscount = (discountText: string): number => {
     const match = discountText.match(/(\d+)%/);
     if (match && match[1]) {
@@ -63,7 +69,6 @@ export function DishDetailScreen({
     return 0;
   };
 
-  // ✅ CALCULAR PRECIOS CON DESCUENTO
   const originalPrice = dish.price;
   const discountPercentage = hasPromotion ? parseDiscount(promotionDiscount) : 0;
   const priceWithDiscount = discountPercentage > 0 
@@ -72,7 +77,6 @@ export function DishDetailScreen({
   const finalPrice = hasPromotion && discountPercentage > 0 ? priceWithDiscount : originalPrice;
   const savings = originalPrice - finalPrice;
 
-  // ✅ CALCULAR TOTAL CON PRECIO PROMOCIONAL
   const calculateFinalTotalPrice = () => {
     return finalPrice * quantity;
   };
@@ -125,7 +129,6 @@ export function DishDetailScreen({
           <View style={styles.imageContainer}>
             <ImageWithFallback source={{ uri: dish.image }} style={styles.image} />
             
-            {/* Botón de favorito sobre la imagen */}
             <TouchableOpacity
               onPress={toggleFavorite}
               style={styles.favoriteButton}
@@ -139,7 +142,6 @@ export function DishDetailScreen({
               />
             </TouchableOpacity>
 
-            {/* ✅ NUEVO: Badge de promoción */}
             {hasPromotion && discountPercentage > 0 && (
               <View style={styles.promotionBadge}>
                 <Ionicons name="pricetag" size={16} color="#FFF" />
@@ -153,15 +155,17 @@ export function DishDetailScreen({
         <View style={styles.infoCard}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{dish.name}</Text>
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={18} color="#F59E0B" />
-              <Text style={styles.rating}>4.5</Text>
-            </View>
+            {/* ✅ NUEVO: Badge de rating */}
+            {ratingStats && ratingStats.averageRating > 0 && (
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={18} color="#F59E0B" />
+                <Text style={styles.rating}>{ratingStats.averageRating.toFixed(1)}</Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.restaurant}>Appetito</Text>
 
-          {/* ✅ NUEVO: Mensaje de promoción */}
           {hasPromotion && promotionTitle && (
             <View style={styles.promotionInfo}>
               <Ionicons name="gift-outline" size={20} color="#F97316" />
@@ -177,7 +181,52 @@ export function DishDetailScreen({
             </View>
           )}
 
-          {/* ✅ NUEVO: Sección de precio con descuento */}
+          {/* ✅ NUEVA SECCIÓN: Reviews */}
+          {ratingStats && ratingStats.totalReviews > 0 && (
+            <View style={styles.reviewsSection}>
+              <TouchableOpacity
+                onPress={() => setShowAllReviews(!showAllReviews)}
+                style={styles.reviewsHeader}
+                activeOpacity={0.7}
+              >
+                <View style={styles.reviewsHeaderLeft}>
+                  <Text style={styles.reviewsTitle}>Calificaciones</Text>
+                  <View style={styles.reviewsStars}>
+                    <StarRating 
+                      rating={ratingStats.averageRating} 
+                      size={16} 
+                      readonly 
+                    />
+                    <Text style={styles.reviewsCount}>
+                      {ratingStats.averageRating.toFixed(1)} ({ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'reseña' : 'reseñas'})
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons 
+                  name={showAllReviews ? 'chevron-up' : 'chevron-down'} 
+                  size={24} 
+                  color="#6B7280" 
+                />
+              </TouchableOpacity>
+
+              {/* ✅ Lista de reviews (expandible) */}
+              {showAllReviews && (
+                <View style={styles.reviewsList}>
+                  {loadingReviews ? (
+                    <Text style={styles.loadingText}>Cargando reseñas...</Text>
+                  ) : reviews.length > 0 ? (
+                    reviews.map((review) => (
+                      <ReviewCard key={review.id} review={review} />
+                    ))
+                  ) : (
+                    <Text style={styles.noReviewsText}>No hay reseñas aún</Text>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Sección de precio */}
           <View style={styles.priceSection}>
             <Text style={styles.sectionTitle}>Precio</Text>
             <View style={styles.priceContainer}>
@@ -338,7 +387,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
   promotionBadge: {
     position: 'absolute',
     top: 16,
@@ -404,7 +452,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginBottom: 12,
   },
-  // ✅ NUEVO: Info de promoción
   promotionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -439,7 +486,54 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontWeight: '500',
   },
-  // ✅ NUEVO: Sección de precios
+  // ✅ NUEVOS ESTILOS PARA REVIEWS
+  reviewsSection: {
+    marginBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 20,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewsHeaderLeft: {
+    flex: 1,
+  },
+  reviewsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  reviewsStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewsCount: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  reviewsList: {
+    gap: 12,
+    marginTop: 12,
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    fontSize: 14,
+    paddingVertical: 16,
+  },
+  noReviewsText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    fontSize: 14,
+    paddingVertical: 16,
+  },
   priceSection: {
     marginBottom: 20,
   },
@@ -526,7 +620,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#EF4444',
   },
-  // ✅ NUEVO: Total de ahorros
   totalSavings: {
     fontSize: 11,
     color: '#10B981',

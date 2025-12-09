@@ -13,13 +13,14 @@ import {
 } from 'react-native';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { StarRating } from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useAdminMenuViewModel } from '../viewmodels/AdminMenuViewModel';
 
 interface AdminMenuScreenProps {
   restaurantId: string | null;
   onNavigateBack: () => void;
-  onNavigateToDashboard: () => void; // ← NUEVO
+  onNavigateToDashboard: () => void;
   onNavigateToOrders: () => void;
   onNavigateToReservations: () => void;
   onNavigateToStatistics: () => void;
@@ -38,7 +39,7 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
     {
       restaurantId,
       onNavigateBack,
-      onNavigateToDashboard, // ← NUEVO
+      onNavigateToDashboard,
       onNavigateToOrders,
       onNavigateToReservations,
       onNavigateToStatistics,
@@ -99,7 +100,7 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
 
         {/* Content */}
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {/* Welcome Section - NUEVO */}
+          {/* Welcome Section */}
           <View style={styles.welcomeSection}>
             <View>
               <Text style={styles.welcomeLabel}>Bienvenido</Text>
@@ -158,6 +159,22 @@ export const AdminMenuScreen = forwardRef<AdminMenuScreenRef, AdminMenuScreenPro
                       <Text style={styles.productName} numberOfLines={1}>
                         {product.name}
                       </Text>
+                      
+                      {/* ✅ NUEVO: Rating Section */}
+                      {product.rating && product.rating > 0 ? (
+                        <View style={styles.ratingContainer}>
+                          <StarRating rating={product.rating} size={14} readonly />
+                          <Text style={styles.ratingText}>{product.rating.toFixed(1)}</Text>
+                          {product.totalReviews && product.totalReviews > 0 && (
+                            <Text style={styles.reviewsText}>
+                              ({product.totalReviews} {product.totalReviews === 1 ? 'reseña' : 'reseñas'})
+                            </Text>
+                          )}
+                        </View>
+                      ) : (
+                        <Text style={styles.noReviewsText}>Sin calificaciones</Text>
+                      )}
+
                       <Text style={styles.productDescription} numberOfLines={1}>
                         {product.description}
                       </Text>
@@ -288,11 +305,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFF',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
   scrollView: {
     flex: 1,
   },
@@ -300,7 +312,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 24,
   },
-  // NUEVO - Welcome Section
   welcomeSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -397,6 +408,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
+    marginBottom: 4,
+  },
+  // ✅ NUEVOS ESTILOS PARA RATING
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F59E0B',
+  },
+  reviewsText: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  noReviewsText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
     marginBottom: 4,
   },
   productDescription: {

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { BottomNav } from '../components/BottomNav';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { StarRating } from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useOrderViewModel } from '../viewmodels/OrderViewModel';
 
@@ -157,7 +158,6 @@ export function OrderScreen({
                       source={{ uri: dish.image }}
                       style={styles.productImage}
                     />
-                    {/* ✅ NUEVO: Badge de promoción */}
                     {dish.hasPromotion && dish.promotionDiscount && (
                       <View style={styles.promotionBadge}>
                         <Text style={styles.promotionText}>
@@ -172,7 +172,26 @@ export function OrderScreen({
                       <Text style={styles.productName} numberOfLines={1}>
                         {dish.name}
                       </Text>
-                      {/* ✅ NUEVO: Título de promoción */}
+
+                      {/* ✅ NUEVO: Rating con estrellas */}
+                      {dish.rating && dish.rating > 0 && (
+                        <View style={styles.ratingContainer}>
+                          <StarRating 
+                            rating={dish.rating} 
+                            size={14} 
+                            readonly 
+                          />
+                          <Text style={styles.ratingText}>
+                            {dish.rating.toFixed(1)}
+                          </Text>
+                          {dish.totalReviews && dish.totalReviews > 0 && (
+                            <Text style={styles.reviewsText}>
+                              ({dish.totalReviews})
+                            </Text>
+                          )}
+                        </View>
+                      )}
+
                       {dish.hasPromotion && dish.promotionTitle && (
                         <Text style={styles.promotionTitle} numberOfLines={1}>
                           🎁 {dish.promotionTitle}
@@ -181,7 +200,6 @@ export function OrderScreen({
                       <Text style={styles.productDescription} numberOfLines={2}>
                         {dish.description}
                       </Text>
-                      {/* ✅ NUEVO: Precio con descuento */}
                       {dish.hasPromotion && dish.originalPrice && dish.discountedPrice ? (
                         <View>
                           <Text style={styles.originalPrice}>
@@ -382,7 +400,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#E5E7EB',
   },
-  // ✅ NUEVOS ESTILOS PARA PROMOCIONES
   promotionBadge: {
     position: 'absolute',
     top: 4,
@@ -423,6 +440,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  // ✅ NUEVOS ESTILOS PARA RATING
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F59E0B',
+    marginLeft: 4,
+  },
+  reviewsText: {
+    fontSize: 12,
+    color: '#6B7280',
   },
   productDescription: {
     color: '#6B7280',

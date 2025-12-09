@@ -1,5 +1,4 @@
-// viewmodels/DishDetailViewModel.ts - REEMPLAZAR FUNCIÓN COMPLETA
-
+// viewmodels/DishDetailViewModel.ts
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import {
@@ -7,12 +6,15 @@ import {
   addToCart,
   auth,
   getProductById,
+  getProductRatingStats,
+  getProductReviews,
   isDishFavorite,
   Product,
-  removeDishFavorite
+  ProductReview,
+  removeDishFavorite,
+  ReviewStats
 } from '../lib/firebase';
 
-// ✅ NUEVA INTERFACE PARA PROMOCIÓN
 interface PromotionData {
   hasPromotion: boolean;
   promotionDiscount: string;
@@ -21,15 +23,19 @@ interface PromotionData {
 
 export function useDishDetailViewModel(
   dish: Product,
-  promotionData?: PromotionData // ✅ NUEVO PARÁMETRO
+  promotionData?: PromotionData
 ) {
   const [dishData, setDishData] = useState<Product>(dish);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isFavoriteState, setIsFavoriteState] = useState(false);
   const [checkingFavorite, setCheckingFavorite] = useState(true);
+  
+  // ✅ NUEVOS ESTADOS PARA REVIEWS
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [ratingStats, setRatingStats] = useState<ReviewStats | null>(null);
 
-  // ✅ CALCULAR PRECIO CON DESCUENTO
   const parseDiscount = (discountText: string): number => {
     const match = discountText.match(/(\d+)%/);
     if (match && match[1]) {
@@ -49,6 +55,9 @@ export function useDishDetailViewModel(
       loadDishData();
     }
     checkIfFavorite();
+    // ✅ NUEVO: Cargar reviews y estadísticas
+    loadReviews();
+    loadRatingStats();
   }, [dish.id]);
 
   const loadDishData = async () => {
@@ -85,6 +94,39 @@ export function useDishDetailViewModel(
       // Error silencioso
     } finally {
       setCheckingFavorite(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar reviews del producto
+  const loadReviews = async () => {
+    if (!dish.id || !dish.restaurantId) return;
+
+    setLoadingReviews(true);
+    try {
+      const result = await getProductReviews(dish.id, dish.restaurantId);
+      
+      if (result.success && result.reviews) {
+        setReviews(result.reviews);
+      }
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar estadísticas de rating
+  const loadRatingStats = async () => {
+    if (!dish.id || !dish.restaurantId) return;
+
+    try {
+      const result = await getProductRatingStats(dish.id, dish.restaurantId);
+      
+      if (result.success && result.stats) {
+        setRatingStats(result.stats);
+      }
+    } catch (error) {
+      console.error('Error loading rating stats:', error);
     }
   };
 
@@ -154,7 +196,6 @@ export function useDishDetailViewModel(
     setIsAddingToCart(true);
 
     try {
-      // ✅ PREPARAR DATOS DE PROMOCIÓN SI EXISTEN
       const cartPromotionData = promotionData && discountPercentage > 0 ? {
         hasPromotion: true,
         promotionDiscount: promotionData.promotionDiscount,
@@ -168,8 +209,8 @@ export function useDishDetailViewModel(
           user.uid, 
           dish.id, 
           dish.restaurantId,
-          1, // ← quantity individual
-          cartPromotionData // ← ✅ PASAR DATOS DE PROMOCIÓN
+          1,
+          cartPromotionData
         );
         
         if (!result.success) {
@@ -212,5 +253,9 @@ export function useDishDetailViewModel(
     calculateTotalPrice,
     isAddingToCart,
     checkingFavorite,
+    // ✅ NUEVOS VALORES RETORNADOS
+    reviews,
+    loadingReviews,
+    ratingStats,
   } as const;
 }

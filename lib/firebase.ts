@@ -30,6 +30,13 @@ export const database = getDatabase(app);
 // INTERFACES
 // ============================================
 
+// ✅ Interface genérica para resultados
+export interface FirebaseResult<T = void> {
+  success: boolean;
+  error?: string;
+  [key: string]: any;
+}
+
 export interface Product {
   id?: string;
   name: string;
@@ -45,6 +52,15 @@ export interface Product {
   promotionTitle?: string;
   originalPrice?: number;
   discountedPrice?: number;
+  rating?: number;
+  totalReviews?: number;
+  ratingDistribution?: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
 }
 
 export interface Restaurant {
@@ -172,6 +188,31 @@ export interface Promotion {
   productIds?: string[];
   createdAt: number;
   expiresAt?: number;
+}
+
+export interface ProductReview {
+  id?: string;
+  productId: string;
+  productName: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment?: string;
+  orderId: string;
+  restaurantId: string;
+  createdAt: number;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
 }
 
 // ============================================
@@ -830,11 +871,9 @@ export async function getUserOrders(
 
 export const updateOrderStatus = async (orderId: string, restaurantId: string, status: Order['status']) => {
   try {
-    // ✅ Actualizar en AMBAS ubicaciones
     await update(ref(database), {
       [`restaurants/${restaurantId}/orders/${orderId}/status`]: status,
       [`restaurants/${restaurantId}/orders/${orderId}/updatedAt`]: Date.now(),
-      // ✅ AGREGAR: También actualizar en la ubicación global
       [`orders/${orderId}/status`]: status,
       [`orders/${orderId}/updatedAt`]: Date.now()
     });
@@ -956,7 +995,6 @@ export const updateReservationStatus = async (reservationId: string, restaurantI
 // FUNCIONES PARA CARRITO
 // ============================================
 
-// ✅ FUNCIÓN ACTUALIZADA CON SOPORTE PARA PROMOCIONES
 export const addToCart = async (
   userId: string, 
   productId: string, 
@@ -1423,3 +1461,280 @@ export const getProductPromotions = async (
     return { success: false, error: error.message };
   }
 };
+
+// ============================================
+// FUNCIONES PARA REVIEWS (CALIFICACIONES) - ✅ CON LOGS
+// ============================================
+
+export async function createProductReview(
+  review: ProductReview
+): Promise<FirebaseResult<{ reviewId: string }>> {
+  try {
+    console.log('🔵 [CREATE REVIEW] ========== INICIO ==========');
+    console.log('🔵 [CREATE REVIEW] Datos recibidos:', {
+      productId: review.productId,
+      productName: review.productName,
+      restaurantId: review.restaurantId,
+      userId: review.userId,
+      orderId: review.orderId,
+      rating: review.rating,
+      hasComment: !!review.comment,
+    });
+
+    // ✅ Verificar si el usuario ya calificó este pedido
+    console.log('🔵 [CREATE REVIEW] Verificando si usuario ya calificó...');
+    const hasReviewed = await hasUserReviewedOrder(review.userId, review.orderId);
+    
+    if (hasReviewed.success && hasReviewed.hasReviewed) {
+      console.log('⚠️ [CREATE REVIEW] Usuario ya calificó este pedido');
+      return {
+        success: false,
+        error: 'Ya has calificado este pedido',
+      };
+    }
+    console.log('✅ [CREATE REVIEW] Usuario NO ha calificado este pedido antes');
+
+    // ✅ Crear la review en Firebase
+    const reviewPath = `restaurants/${review.restaurantId}/products/${review.productId}/reviews`;
+    console.log('🔵 [CREATE REVIEW] Ruta de Firebase:', reviewPath);
+    
+    const reviewsRef = ref(database, reviewPath);
+    const newReviewRef = push(reviewsRef);
+    const reviewId = newReviewRef.key!;
+
+    console.log('🔵 [CREATE REVIEW] ID de review generado:', reviewId);
+
+    const reviewData = {
+      ...review,
+      id: reviewId,
+      createdAt: Date.now(),
+    };
+
+    console.log('🔵 [CREATE REVIEW] Guardando review en Firebase...');
+    await set(newReviewRef, reviewData);
+    console.log('✅ [CREATE REVIEW] Review guardada exitosamente');
+
+    // ✅ Marcar el pedido como calificado
+    const reviewedOrderPath = `users/${review.userId}/reviewedOrders/${review.orderId}`;
+    console.log('🔵 [CREATE REVIEW] Marcando pedido como calificado en:', reviewedOrderPath);
+    const reviewedOrderRef = ref(database, reviewedOrderPath);
+    await set(reviewedOrderRef, true);
+    console.log('✅ [CREATE REVIEW] Pedido marcado como calificado');
+
+    // ✅ ACTUALIZAR ESTADÍSTICAS DEL PRODUCTO
+    console.log('🔵 [CREATE REVIEW] Actualizando estadísticas del producto...');
+    const statsResult = await updateProductRatingStats(review.productId, review.restaurantId);
+    
+    if (statsResult.success) {
+      console.log('✅ [CREATE REVIEW] Estadísticas actualizadas exitosamente');
+    } else {
+      console.error('❌ [CREATE REVIEW] Error al actualizar estadísticas:', statsResult.error);
+    }
+
+    console.log('🔵 [CREATE REVIEW] ========== FIN EXITOSO ==========');
+    return {
+      success: true,
+      reviewId,
+    };
+  } catch (error: any) {
+    console.error('❌ [CREATE REVIEW] ========== ERROR ==========');
+    console.error('❌ [CREATE REVIEW] Error completo:', error);
+    console.error('❌ [CREATE REVIEW] Stack:', error.stack);
+    return {
+      success: false,
+      error: error.message || 'Error al crear la reseña',
+    };
+  }
+}
+
+// ✅ EXPORTADA Y CON LOGS
+export async function updateProductRatingStats(
+  productId: string,
+  restaurantId: string
+): Promise<FirebaseResult<void>> {
+  try {
+    console.log('🔵 [UPDATE STATS] ========== INICIO ==========');
+    console.log('🔵 [UPDATE STATS] ProductId:', productId);
+    console.log('🔵 [UPDATE STATS] RestaurantId:', restaurantId);
+
+    // ✅ Obtener todas las reviews del producto
+    const reviewsPath = `restaurants/${restaurantId}/products/${productId}/reviews`;
+    console.log('🔵 [UPDATE STATS] Buscando reviews en:', reviewsPath);
+    
+    const reviewsRef = ref(database, reviewsPath);
+    const snapshot = await get(reviewsRef);
+
+    if (!snapshot.exists()) {
+      console.log('⚠️ [UPDATE STATS] No hay reviews, estableciendo valores por defecto');
+      // No hay reviews, establecer valores por defecto
+      const productPath = `restaurants/${restaurantId}/products/${productId}`;
+      const productRef = ref(database, productPath);
+      await update(productRef, {
+        rating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      });
+      console.log('✅ [UPDATE STATS] Valores por defecto establecidos');
+      return { success: true };
+    }
+
+    const reviews = snapshot.val();
+    const reviewArray: ProductReview[] = Object.values(reviews);
+    
+    console.log('🔵 [UPDATE STATS] Reviews encontradas:', reviewArray.length);
+    console.log('🔵 [UPDATE STATS] Ratings individuales:', reviewArray.map(r => r.rating));
+
+    // ✅ Calcular estadísticas
+    const totalReviews = reviewArray.length;
+    const sumRatings = reviewArray.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = sumRatings / totalReviews;
+
+    // ✅ Calcular distribución
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviewArray.forEach((review) => {
+      distribution[review.rating as keyof typeof distribution]++;
+    });
+
+    console.log('🔵 [UPDATE STATS] Estadísticas calculadas:');
+    console.log('  - Promedio:', averageRating.toFixed(2));
+    console.log('  - Total reviews:', totalReviews);
+    console.log('  - Distribución:', distribution);
+
+    // ✅ Actualizar el producto
+    const productPath = `restaurants/${restaurantId}/products/${productId}`;
+    console.log('🔵 [UPDATE STATS] Actualizando producto en:', productPath);
+    
+    const productRef = ref(database, productPath);
+    const updateData = {
+      rating: Math.round(averageRating * 10) / 10, // Redondear a 1 decimal
+      totalReviews: totalReviews,
+      ratingDistribution: distribution,
+    };
+    
+    console.log('🔵 [UPDATE STATS] Datos a actualizar:', updateData);
+    await update(productRef, updateData);
+    console.log('✅ [UPDATE STATS] Producto actualizado exitosamente');
+    console.log('🔵 [UPDATE STATS] ========== FIN EXITOSO ==========');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ [UPDATE STATS] ========== ERROR ==========');
+    console.error('❌ [UPDATE STATS] Error completo:', error);
+    console.error('❌ [UPDATE STATS] Stack:', error.stack);
+    return {
+      success: false,
+      error: error.message || 'Error al actualizar estadísticas',
+    };
+  }
+}
+
+export async function getProductReviews(
+  productId: string,
+  restaurantId: string
+): Promise<FirebaseResult<{ reviews: ProductReview[] }>> {
+  try {
+    console.log('🔵 [GET REVIEWS] Obteniendo reviews para:', { productId, restaurantId });
+    
+    const reviewsRef = ref(
+      database,
+      `restaurants/${restaurantId}/products/${productId}/reviews`
+    );
+    const snapshot = await get(reviewsRef);
+
+    if (snapshot.exists()) {
+      const reviews: ProductReview[] = [];
+      snapshot.forEach((childSnapshot) => {
+        reviews.push({
+          id: childSnapshot.key,
+          ...childSnapshot.val(),
+        });
+      });
+
+      reviews.sort((a, b) => b.createdAt - a.createdAt);
+      console.log('✅ [GET REVIEWS] Reviews encontradas:', reviews.length);
+      return { success: true, reviews };
+    }
+
+    console.log('⚠️ [GET REVIEWS] No se encontraron reviews');
+    return { success: true, reviews: [] };
+  } catch (error: any) {
+    console.error('❌ [GET REVIEWS] Error:', error);
+    return { success: false, error: error.message, reviews: [] };
+  }
+}
+
+export async function hasUserReviewedOrder(
+  userId: string,
+  orderId: string
+): Promise<FirebaseResult<{ hasReviewed: boolean }>> {
+  try {
+    const reviewRef = ref(database, `users/${userId}/reviewedOrders/${orderId}`);
+    const snapshot = await get(reviewRef);
+
+    return {
+      success: true,
+      hasReviewed: snapshot.exists(),
+    };
+  } catch (error: any) {
+    console.error('❌ [HAS REVIEWED] Error:', error);
+    return {
+      success: false,
+      hasReviewed: false,
+      error: error.message,
+    };
+  }
+}
+
+export async function getProductRatingStats(
+  productId: string,
+  restaurantId: string
+): Promise<FirebaseResult<{ stats: ReviewStats }>> {
+  try {
+    console.log('🔵 [GET STATS] Obteniendo stats para:', { productId, restaurantId });
+    
+    const productRef = ref(
+      database,
+      `restaurants/${restaurantId}/products/${productId}`
+    );
+    const snapshot = await get(productRef);
+
+    if (snapshot.exists()) {
+      const productData = snapshot.val();
+      const stats: ReviewStats = {
+        averageRating: productData.rating || 0,
+        totalReviews: productData.totalReviews || 0,
+        ratingDistribution: productData.ratingDistribution || {
+          5: 0,
+          4: 0,
+          3: 0,
+          2: 0,
+          1: 0,
+        },
+      };
+
+      console.log('✅ [GET STATS] Stats encontradas:', stats);
+      return { success: true, stats };
+    }
+
+    console.log('⚠️ [GET STATS] Producto no encontrado, retornando stats vacías');
+    return {
+      success: true,
+      stats: {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      },
+    };
+  } catch (error: any) {
+    console.error('❌ [GET STATS] Error:', error);
+    return { 
+      success: false, 
+      error: error.message,
+      stats: {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      },
+    };
+  }
+}

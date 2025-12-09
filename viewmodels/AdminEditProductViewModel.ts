@@ -1,8 +1,17 @@
 // viewmodels/AdminEditProductViewModel.ts
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { deleteProduct, Product, updateProduct, uploadProductImage } from '../lib/firebase';
+import {
+  deleteProduct,
+  getProductRatingStats,
+  getProductReviews,
+  Product,
+  ProductReview,
+  ReviewStats,
+  updateProduct,
+  uploadProductImage
+} from '../lib/firebase';
 
 export function useAdminEditProductViewModel(
   restaurantId: string | null,
@@ -12,6 +21,53 @@ export function useAdminEditProductViewModel(
   const [editedProduct, setEditedProduct] = useState<Product>(product);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  
+  // ✅ NUEVOS ESTADOS PARA REVIEWS
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [ratingStats, setRatingStats] = useState<ReviewStats | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
+  // ✅ CARGAR REVIEWS CUANDO CAMBIA EL PRODUCTO
+  useEffect(() => {
+    if (product.id && restaurantId) {
+      loadReviews();
+      loadRatingStats();
+    }
+  }, [product.id, restaurantId]);
+
+  // ✅ FUNCIÓN PARA CARGAR REVIEWS
+  const loadReviews = async () => {
+    if (!product.id || !restaurantId) return;
+
+    setLoadingReviews(true);
+    try {
+      const result = await getProductReviews(product.id, restaurantId);
+      
+      if (result.success && result.reviews) {
+        setReviews(result.reviews);
+      }
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // ✅ FUNCIÓN PARA CARGAR ESTADÍSTICAS DE RATING
+  const loadRatingStats = async () => {
+    if (!product.id || !restaurantId) return;
+
+    try {
+      const result = await getProductRatingStats(product.id, restaurantId);
+      
+      if (result.success && result.stats) {
+        setRatingStats(result.stats);
+      }
+    } catch (error) {
+      console.error('Error loading rating stats:', error);
+    }
+  };
 
   const setProductName = (name: string) => {
     setEditedProduct({ ...editedProduct, name });
@@ -170,5 +226,11 @@ export function useAdminEditProductViewModel(
     pickImage,
     handleSave,
     handleDelete,
+    // ✅ NUEVOS VALORES RETORNADOS
+    reviews,
+    loadingReviews,
+    ratingStats,
+    showAllReviews,
+    setShowAllReviews,
   } as const;
 }

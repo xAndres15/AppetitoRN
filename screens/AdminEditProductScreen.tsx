@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,6 +14,8 @@ import {
   View
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { ReviewCard } from '../components/ReviewCard';
+import { StarRating } from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useAdminEditProductViewModel } from '../viewmodels/AdminEditProductViewModel';
 
@@ -39,6 +42,12 @@ export function AdminEditProductScreen({
     pickImage,
     handleSave,
     handleDelete,
+    // ✅ NUEVO: Reviews data
+    reviews,
+    loadingReviews,
+    ratingStats,
+    showAllReviews,
+    setShowAllReviews,
   } = useAdminEditProductViewModel(restaurantId, product, onNavigateBack);
 
   return (
@@ -163,6 +172,84 @@ export function AdminEditProductScreen({
                 ]}
               />
             </TouchableOpacity>
+          </View>
+
+          {/* ✅ NUEVA SECCIÓN: Calificaciones y Reseñas */}
+          <View style={styles.reviewsSection}>
+            <Text style={styles.sectionTitle}>Calificaciones y Reseñas</Text>
+            
+            {loadingReviews ? (
+              <View style={styles.reviewsLoading}>
+                <ActivityIndicator size="small" color="#F97316" />
+                <Text style={styles.loadingText}>Cargando calificaciones...</Text>
+              </View>
+            ) : ratingStats && ratingStats.totalReviews > 0 ? (
+              <>
+                {/* Rating Summary */}
+                <View style={styles.ratingSummary}>
+                  <View style={styles.ratingOverview}>
+                    <Text style={styles.ratingNumber}>{ratingStats.averageRating.toFixed(1)}</Text>
+                    <StarRating rating={ratingStats.averageRating} size={20} readonly />
+                    <Text style={styles.totalReviews}>
+                      {ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'reseña' : 'reseñas'}
+                    </Text>
+                  </View>
+
+                  {/* Rating Distribution */}
+                  <View style={styles.ratingDistribution}>
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = ratingStats.ratingDistribution[star as keyof typeof ratingStats.ratingDistribution] || 0;
+                      const percentage = (count / ratingStats.totalReviews) * 100;
+                      
+                      return (
+                        <View key={star} style={styles.distributionRow}>
+                          <Text style={styles.starLabel}>{star}★</Text>
+                          <View style={styles.progressBarContainer}>
+                            <View 
+                              style={[
+                                styles.progressBar, 
+                                { width: `${percentage}%` }
+                              ]} 
+                            />
+                          </View>
+                          <Text style={styles.countLabel}>{count}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* Reviews List */}
+                {reviews.length > 0 && (
+                  <View style={styles.reviewsList}>
+                    <TouchableOpacity
+                      style={styles.reviewsHeader}
+                      onPress={() => setShowAllReviews(!showAllReviews)}
+                    >
+                      <Text style={styles.reviewsTitle}>Reseñas recientes</Text>
+                      <Ionicons 
+                        name={showAllReviews ? "chevron-up" : "chevron-down"} 
+                        size={20} 
+                        color="#6B7280" 
+                      />
+                    </TouchableOpacity>
+
+                    {showAllReviews && (
+                      <View style={styles.reviewsContent}>
+                        {reviews.map((review, index) => (
+                          <ReviewCard key={review.id || index} review={review} />
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.noReviews}>
+                <Ionicons name="star-outline" size={48} color="#D1D5DB" />
+                <Text style={styles.noReviewsText}>Este producto aún no tiene calificaciones</Text>
+              </View>
+            )}
           </View>
 
           {/* Action Buttons */}
@@ -358,6 +445,112 @@ const styles = StyleSheet.create({
   },
   toggleCircleInactive: {
     alignSelf: 'flex-start',
+  },
+  // ✅ NUEVOS ESTILOS PARA REVIEWS
+  reviewsSection: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  reviewsLoading: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  ratingSummary: {
+    gap: 16,
+  },
+  ratingOverview: {
+    alignItems: 'center',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  ratingNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  totalReviews: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  ratingDistribution: {
+    gap: 8,
+  },
+  distributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  starLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    width: 24,
+  },
+  progressBarContainer: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 4,
+  },
+  countLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    width: 30,
+    textAlign: 'right',
+  },
+  reviewsList: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 16,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  reviewsContent: {
+    gap: 12,
+  },
+  noReviews: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  noReviewsText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 12,
+    textAlign: 'center',
   },
   actionsContainer: {
     flexDirection: 'row',
