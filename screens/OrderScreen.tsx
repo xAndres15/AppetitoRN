@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { BottomNav } from '../components/BottomNav';
 import { ImageWithFallback } from '../components/ImageWithFallback';
-import { StarRating } from '../components/StarRating';
+import StarRating from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useOrderViewModel } from '../viewmodels/OrderViewModel';
 

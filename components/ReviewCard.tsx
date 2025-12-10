@@ -1,14 +1,14 @@
 // components/ReviewCard.tsx
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ProductReview } from '../lib/firebase';
-import { StarRating } from './StarRating';
+import { ProductReview, RestaurantReview } from '../lib/firebase';
+import StarRating from './StarRating';
 
 interface ReviewCardProps {
-  review: ProductReview;
+  review: ProductReview | RestaurantReview;
 }
 
-export function ReviewCard({ review }: ReviewCardProps) {
+export default function ReviewCard({ review }: ReviewCardProps) {
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();

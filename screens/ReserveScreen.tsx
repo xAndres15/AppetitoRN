@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { BottomNav } from '../components/BottomNav';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import StarRating from '../components/StarRating';
 import { Restaurant } from '../models/Reservation';
 import { useReservationViewModel } from '../viewmodels/ReservationViewModel';
 
@@ -141,7 +142,14 @@ export function ReserveScreen({
                 </View>
               ))
             ) : restaurants.length > 0 ? (
-              restaurants.map((restaurant) => (
+              restaurants.map((restaurant) => {// ✅ LOG TEMPORAL
+    console.log('🟣 [RESTAURANT]:', {
+      name: restaurant.name,
+      rating: restaurant.rating,
+      totalReviews: restaurant.totalReviews,
+      hasRating: !!(restaurant.rating && (restaurant.totalReviews ?? 0) > 0),
+    });
+                return (
                 <TouchableOpacity
                   key={restaurant.id}
                   style={styles.restaurantCard}
@@ -172,12 +180,28 @@ export function ReserveScreen({
                     <Text style={styles.restaurantDescription} numberOfLines={1}>
                       {restaurant.description}
                     </Text>
+
+                    {/* Rating Section */}
+                    <View style={styles.ratingContainer}>
+                      {restaurant.rating && (restaurant.totalReviews ?? 0) > 0 ? (
+                        <>
+                        <StarRating rating={restaurant.rating} size={14} readonly />
+                        <Text style={styles.ratingText}>
+                          {restaurant.rating.toFixed(1)} ({restaurant.totalReviews})
+                        </Text>
+                        </>
+                      ) : (
+                       <Text style={styles.noRatingText}>Sin calificaciones</Text>
+                      )}
+                    </View>
+
                     <Text style={styles.restaurantLocation} numberOfLines={1}>
                       {restaurant.location}
                     </Text>
                   </View>
                 </TouchableOpacity>
-              ))
+                );
+})
             ) : (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
@@ -375,7 +399,23 @@ const styles = StyleSheet.create({
   restaurantDescription: {
     color: '#6B7280',
     fontSize: 12,
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  ratingText: {
+    fontSize: 11,
+    color: '#1F2937',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  noRatingText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
   restaurantLocation: {
     color: '#F97316',

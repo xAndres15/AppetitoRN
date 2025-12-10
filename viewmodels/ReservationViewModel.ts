@@ -27,8 +27,26 @@ export function useReservationViewModel() {
       const result = await ReservationService.getRestaurants();
       
       if (result.success && result.data) {
-        setRestaurants(result.data);
-        setFilteredRestaurants(result.data);
+        // ✅ MAPEAR DATOS INCLUYENDO CAMPOS DE RATING
+        const restaurantsData = result.data.map((restaurant: any) => ({
+          id: restaurant.id || '',
+          firebaseId: restaurant.id || restaurant.firebaseId,
+          name: restaurant.name,
+          description: restaurant.description || '',
+          location: restaurant.location || restaurant.address || '',
+          image: restaurant.image || restaurant.coverImage || restaurant.logo || '',
+          phone: restaurant.phone,
+          schedule: restaurant.schedule,
+          cuisine: restaurant.cuisine,
+          address: restaurant.address,
+          // ✅ INCLUIR CAMPOS DE RATING
+          rating: restaurant.rating,
+          totalReviews: restaurant.totalReviews,
+          ratingDistribution: restaurant.ratingDistribution,
+        }));
+        
+        setRestaurants(restaurantsData);
+        setFilteredRestaurants(restaurantsData);
       } else {
         Alert.alert('Error', result.error || 'Error al cargar restaurantes');
       }

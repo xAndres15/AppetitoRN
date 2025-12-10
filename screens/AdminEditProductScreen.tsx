@@ -14,8 +14,8 @@ import {
   View
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
-import { ReviewCard } from '../components/ReviewCard';
-import { StarRating } from '../components/StarRating';
+import ReviewCard from '../components/ReviewCard';
+import StarRating from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useAdminEditProductViewModel } from '../viewmodels/AdminEditProductViewModel';
 

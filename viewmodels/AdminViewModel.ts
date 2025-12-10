@@ -1,7 +1,14 @@
 // viewmodels/AdminViewModel.ts
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { Order, Reservation } from '../lib/firebase';
+import {
+  getRestaurantRatingStats,
+  getRestaurantReviews,
+  Order,
+  Reservation,
+  RestaurantRatingStats,
+  RestaurantReview,
+} from '../lib/firebase';
 import { AdminService } from '../services/AdminService';
 
 interface ChartData {
@@ -22,10 +29,18 @@ export function useAdminViewModel(restaurantId: string | null) {
     datasets: [{ data: [0] }],
   });
 
+  // ✅ NUEVOS ESTADOS PARA REVIEWS
+  const [restaurantReviews, setRestaurantReviews] = useState<RestaurantReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  const [ratingStats, setRatingStats] = useState<RestaurantRatingStats | null>(null);
+
   useEffect(() => {
     if (restaurantId) {
       loadRestaurantInfo();
       loadData();
+      loadRestaurantReviews();
+      loadRatingStats();
     }
   }, [restaurantId]);
 
@@ -61,6 +76,45 @@ export function useAdminViewModel(restaurantId: string | null) {
     }
 
     setLoading(false);
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar reviews del restaurante
+  const loadRestaurantReviews = async () => {
+    if (!restaurantId) return;
+
+    try {
+      setLoadingReviews(true);
+      const result = await getRestaurantReviews(restaurantId);
+
+      if (result.success && result.reviews) {
+        // Mostrar solo las últimas 5 reviews
+        setRestaurantReviews(result.reviews.slice(0, 5));
+      }
+    } catch (error) {
+      console.error('Error loading restaurant reviews:', error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar estadísticas de rating
+  const loadRatingStats = async () => {
+    if (!restaurantId) return;
+
+    try {
+      const result = await getRestaurantRatingStats(restaurantId);
+
+      if (result.success && result.stats) {
+        setRatingStats(result.stats);
+      }
+    } catch (error) {
+      console.error('Error loading rating stats:', error);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Toggle mostrar reviews
+  const toggleShowReviews = () => {
+    setShowReviews(!showReviews);
   };
 
   const generateSalesChart = (allOrders: Order[]) => {
@@ -114,35 +168,35 @@ export function useAdminViewModel(restaurantId: string | null) {
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: '2-digit' 
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
     });
   };
 
   const getStatusLabel = (status: Order['status']): string => {
     const statusMap: { [key: string]: string } = {
-      'pending': 'Pendiente',
-      'confirmed': 'Confirmado',
-      'preparing': 'Preparación',
-      'ready': 'Listo',
-      'delivering': 'Enviado',
-      'delivered': 'Entregado',
-      'cancelled': 'Cancelado',
+      pending: 'Pendiente',
+      confirmed: 'Confirmado',
+      preparing: 'Preparación',
+      ready: 'Listo',
+      delivering: 'Enviado',
+      delivered: 'Entregado',
+      cancelled: 'Cancelado',
     };
     return statusMap[status] || status;
   };
 
   const getStatusColor = (status: Order['status']): string => {
     const colorMap: { [key: string]: string } = {
-      'pending': '#9CA3AF',
-      'confirmed': '#3B82F6',
-      'preparing': '#F97316',
-      'ready': '#A855F7',
-      'delivering': '#FBBF24',
-      'delivered': '#10B981',
-      'cancelled': '#EF4444',
+      pending: '#9CA3AF',
+      confirmed: '#3B82F6',
+      preparing: '#F97316',
+      ready: '#A855F7',
+      delivering: '#FBBF24',
+      delivered: '#10B981',
+      cancelled: '#EF4444',
     };
     return colorMap[status] || '#9CA3AF';
   };
@@ -169,5 +223,11 @@ export function useAdminViewModel(restaurantId: string | null) {
     getStatusLabel,
     getStatusColor,
     loadData,
+    // ✅ NUEVAS PROPIEDADES PARA REVIEWS
+    restaurantReviews,
+    loadingReviews,
+    showReviews,
+    toggleShowReviews,
+    ratingStats,
   } as const;
 }

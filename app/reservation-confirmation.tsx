@@ -12,60 +12,42 @@ export default function ReservationConfirmation() {
     return value || '';
   };
 
-  // CASO 1: Viene desde el formulario (tiene todos los datos)
-  if (params.date && params.time && params.numberOfPeople) {
-    const reservationData = {
-      date: getParam(params.date),
-      time: getParam(params.time),
-      numberOfPeople: getParam(params.numberOfPeople),
-      name: getParam(params.name),
-      email: getParam(params.email),
-      phone: getParam(params.phone),
-      restaurantName: getParam(params.restaurantName),
-      restaurantLocation: getParam(params.restaurantLocation),
-      reservationId: getParam(params.reservationId),
-    };
+  // ✅ LOG DE DEBUG
+  console.log('🟡 [WRAPPER] params received:', JSON.stringify(params, null, 2));
 
+  if (!params.restaurantName) {
     return (
-      <ReservationConfirmationScreen
-        reservationData={reservationData}
-        onNavigateBack={() => router.back()}
-        onNavigateHome={() => router.push('/(tabs)/home')}
-      />
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          Error: Información de la reserva incompleta
+        </Text>
+      </View>
     );
   }
 
-  // CASO 2: Viene desde ProfileScreen (solo tiene IDs, debe cargar desde Firebase)
-  if (params.reservationId && params.restaurantId) {
-    const reservationData = {
-      reservationId: getParam(params.reservationId),
-      restaurantId: getParam(params.restaurantId),
-      date: getParam(params.date),
-      time: getParam(params.time),
-      numberOfPeople: getParam(params.numberOfPeople),
-      name: getParam(params.name),
-      email: getParam(params.email),
-      phone: getParam(params.phone),
-      restaurantName: getParam(params.restaurantName),
-      restaurantLocation: getParam(params.restaurantLocation),
-    };
+  // ✅ CONSTRUIR reservationData CON TODOS LOS CAMPOS
+  const reservationData = {
+    date: getParam(params.date),
+    time: getParam(params.time),
+    numberOfPeople: getParam(params.numberOfPeople),
+    name: getParam(params.name),
+    email: getParam(params.email),
+    phone: getParam(params.phone),
+    restaurantName: getParam(params.restaurantName),
+    restaurantLocation: getParam(params.restaurantLocation),
+    reservationId: getParam(params.reservationId),
+    restaurantId: getParam(params.restaurantId), // ✅ CRÍTICO: Incluir restaurantId
+  };
 
-    return (
-      <ReservationConfirmationScreen
-        reservationData={reservationData}
-        onNavigateBack={() => router.back()}
-        onNavigateHome={() => router.push('/(tabs)/home')}
-      />
-    );
-  }
+  // ✅ LOG DE LO QUE SE PASA AL SCREEN
+  console.log('🟡 [WRAPPER] reservationData to pass:', JSON.stringify(reservationData, null, 2));
 
-  // ERROR: No tiene ni los datos del formulario ni los IDs
   return (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>
-        Error: Datos de la reserva incompletos
-      </Text>
-    </View>
+    <ReservationConfirmationScreen
+      reservationData={reservationData}
+      onNavigateBack={() => router.back()}
+      onNavigateHome={() => router.push('/(tabs)/home')}
+    />
   );
 }
 

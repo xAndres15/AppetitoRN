@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { AdminNavigation } from '../components/AdminNavigation';
+import ReviewCard from '../components/ReviewCard';
+import StarRating from '../components/StarRating';
 import { useAdminViewModel } from '../viewmodels/AdminViewModel';
 
 interface AdminDashboardScreenProps {
@@ -55,6 +57,11 @@ export function AdminDashboardScreen({
     formatDate,
     getStatusLabel,
     getStatusColor,
+    restaurantReviews,
+    loadingReviews,
+    showReviews,
+    toggleShowReviews,
+    ratingStats,
   } = useAdminViewModel(restaurantId);
 
   const chartConfig = {
@@ -74,14 +81,44 @@ export function AdminDashboardScreen({
     },
   };
 
+  const renderRatingDistribution = () => {
+    if (!ratingStats || ratingStats.totalReviews === 0) return null;
+
+    return (
+      <View style={styles.distributionContainer}>
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count =
+            ratingStats.ratingDistribution[
+              star as keyof typeof ratingStats.ratingDistribution
+            ] || 0;
+          const percentage = (count / ratingStats.totalReviews) * 100;
+
+          return (
+            <View key={star} style={styles.distributionRow}>
+              <Text style={styles.distributionLabel}>{star}</Text>
+              <Ionicons name="star" size={14} color="#FCD34D" />
+              <View style={styles.distributionBarContainer}>
+                <View
+                  style={[
+                    styles.distributionBar,
+                    { width: `${percentage}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.distributionCount}>{count}</Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#FEC901', '#F47A00']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
-
-
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
               <TextInput
@@ -214,6 +251,60 @@ export function AdminDashboardScreen({
             </View>
           )}
         </View>
+
+        {/* Restaurant Reviews Section - Collapsible */}
+        {restaurantReviews.length > 0 && (
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.cardHeader}
+              onPress={toggleShowReviews}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.cardTitleOrange}>
+                Reseñas del Restaurante ({restaurantReviews.length})
+              </Text>
+              <Ionicons
+                name={showReviews ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color="#F97316"
+              />
+            </TouchableOpacity>
+
+            {showReviews && (
+              <View style={styles.reviewsContent}>
+                {/* Rating Summary */}
+                {ratingStats && ratingStats.totalReviews > 0 && (
+                  <View style={styles.ratingSection}>
+                    <View style={styles.ratingHeader}>
+                      <Text style={styles.ratingValue}>{ratingStats.rating.toFixed(1)}</Text>
+                      <View>
+                        <StarRating rating={ratingStats.rating} size={18} readonly />
+                        <Text style={styles.ratingCount}>
+                          {ratingStats.totalReviews}{' '}
+                          {ratingStats.totalReviews === 1 ? 'calificación' : 'calificaciones'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {/* Rating Distribution */}
+                {renderRatingDistribution()}
+
+                {/* Reviews List */}
+                {loadingReviews ? (
+                  <ActivityIndicator size="small" color="#F97316" style={styles.reviewsLoader} />
+                ) : (
+                  <View style={styles.reviewsList}>
+                    {restaurantReviews.map((review) => (
+                      <ReviewCard key={review.id} review={review} />
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Income Today */}
         <View style={styles.card}>
@@ -442,6 +533,72 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  reviewsContent: {
+    marginTop: 0,
+  },
+  ratingSection: {
+    backgroundColor: '#FBF2E3',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginRight: 12,
+  },
+  ratingCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  distributionContainer: {
+    marginBottom: 12,
+    backgroundColor: '#FBF2E3',
+    borderRadius: 12,
+    padding: 12,
+  },
+  distributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  distributionLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    width: 16,
+  },
+  distributionBarContainer: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    marginLeft: 8,
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  distributionBar: {
+    height: '100%',
+    backgroundColor: '#FCD34D',
+    borderRadius: 3,
+  },
+  distributionCount: {
+    fontSize: 11,
+    color: '#6B7280',
+    width: 24,
+    textAlign: 'right',
+  },
+  reviewsLoader: {
+    marginVertical: 20,
+  },
+  reviewsList: {
+    gap: 12,
   },
   incomeAmount: {
     fontSize: 24,

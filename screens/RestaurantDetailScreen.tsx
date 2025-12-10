@@ -1,7 +1,7 @@
 // screens/RestaurantDetailScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,6 +14,8 @@ import {
   View,
 } from 'react-native';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import ReviewCard from '../components/ReviewCard';
+import StarRating from '../components/StarRating';
 import { Restaurant } from '../models/Reservation';
 import { useRestaurantDetailViewModel } from '../viewmodels/RestaurantDetailViewModel';
 
@@ -38,7 +40,16 @@ export function RestaurantDetailScreen({
     toggleFavorite,
     getSchedule,
     getPhone,
+    reviews,
+    loadingReviews,
+    ratingStats,
+    showAllReviews,
+    toggleShowAllReviews,
+    displayedReviews,
+    hasMoreReviews,
   } = useRestaurantDetailViewModel(restaurant);
+
+  const [showReviewsSection, setShowReviewsSection] = useState(false);
 
   const schedule = getSchedule();
   const phone = getPhone();
@@ -49,6 +60,35 @@ export function RestaurantDetailScreen({
 
   const handleSocialPress = (platform: string) => {
     // Lógica para abrir redes sociales
+  };
+
+  const renderRatingDistribution = () => {
+    if (!ratingStats || ratingStats.totalReviews === 0) return null;
+
+    return (
+      <View style={styles.distributionContainer}>
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count = ratingStats.ratingDistribution[star as keyof typeof ratingStats.ratingDistribution] || 0;
+          const percentage = (count / ratingStats.totalReviews) * 100;
+
+          return (
+            <View key={star} style={styles.distributionRow}>
+              <Text style={styles.distributionLabel}>{star}</Text>
+              <Ionicons name="star" size={14} color="#FCD34D" />
+              <View style={styles.distributionBarContainer}>
+                <View
+                  style={[
+                    styles.distributionBar,
+                    { width: `${percentage}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.distributionCount}>{count}</Text>
+            </View>
+          );
+        })}
+      </View>
+    );
   };
 
   return (
@@ -133,6 +173,21 @@ export function RestaurantDetailScreen({
           </Text>
           <Text style={styles.restaurantLocation}>{restaurantData.location}</Text>
 
+          {/* Rating Summary */}
+          {ratingStats && ratingStats.totalReviews > 0 && (
+            <View style={styles.ratingSection}>
+              <View style={styles.ratingHeader}>
+                <Text style={styles.ratingValue}>{ratingStats.rating.toFixed(1)}</Text>
+                <View>
+                  <StarRating rating={ratingStats.rating} size={18} readonly />
+                  <Text style={styles.ratingCount}>
+                    {ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'calificación' : 'calificaciones'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Redes sociales */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
@@ -168,6 +223,61 @@ export function RestaurantDetailScreen({
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Sección de Reviews - Collapsible */}
+        {reviews.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.reviewsHeader}
+              onPress={() => setShowReviewsSection(!showReviewsSection)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionTitle}>
+                Reseñas ({reviews.length})
+              </Text>
+              <Ionicons
+                name={showReviewsSection ? 'chevron-up' : 'chevron-down'}
+                size={24}
+                color="#6B7280"
+              />
+            </TouchableOpacity>
+
+            {showReviewsSection && (
+              <View style={styles.reviewsContent}>
+                {/* Rating Distribution */}
+                {renderRatingDistribution()}
+
+                {/* Reviews List */}
+                {loadingReviews ? (
+                  <ActivityIndicator size="small" color="#F97316" style={styles.reviewsLoader} />
+                ) : (
+                  <View style={styles.reviewsList}>
+                    {displayedReviews.map((review) => (
+                      <ReviewCard key={review.id} review={review} />
+                    ))}
+
+                    {hasMoreReviews && (
+                      <TouchableOpacity
+                        style={styles.showMoreButton}
+                        onPress={toggleShowAllReviews}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.showMoreText}>
+                          {showAllReviews ? 'Ver menos' : `Ver todas las reseñas (${reviews.length})`}
+                        </Text>
+                        <Ionicons
+                          name={showAllReviews ? 'chevron-up' : 'chevron-down'}
+                          size={20}
+                          color="#F97316"
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Sección de horarios */}
         <View style={styles.section}>
@@ -346,6 +456,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
   },
+  ratingSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginRight: 12,
+  },
+  ratingCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
   socialContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -366,6 +502,74 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  reviewsContent: {
+    marginTop: 16,
+  },
+  distributionContainer: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+  },
+  distributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  distributionLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    width: 16,
+  },
+  distributionBarContainer: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 3,
+    marginLeft: 8,
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  distributionBar: {
+    height: '100%',
+    backgroundColor: '#FCD34D',
+    borderRadius: 3,
+  },
+  distributionCount: {
+    fontSize: 11,
+    color: '#6B7280',
+    width: 24,
+    textAlign: 'right',
+  },
+  reviewsLoader: {
+    marginVertical: 20,
+  },
+  reviewsList: {
+    gap: 12,
+  },
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F97316',
+  },
+  showMoreText: {
+    fontSize: 14,
+    color: '#F97316',
+    fontWeight: '600',
+    marginRight: 4,
   },
   scheduleContainer: {
     gap: 12,

@@ -1,7 +1,7 @@
 // screens/ReservationConfirmationScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AddRestaurantReviewModal from '../components/AddRestaurantReviewModal';
 import { BottomNav } from '../components/BottomNav';
 import { useReservationConfirmationViewModel } from '../viewmodels/ReservationConfirmationViewModel';
 
@@ -27,6 +28,7 @@ interface ReservationConfirmationScreenProps {
     restaurantName: string;
     restaurantLocation: string;
     reservationId?: string;
+    restaurantId?: string;
   };
   onNavigateBack: () => void;
   onNavigateHome: () => void;
@@ -37,8 +39,33 @@ export function ReservationConfirmationScreen({
   onNavigateBack,
   onNavigateHome,
 }: ReservationConfirmationScreenProps) {
-  const { reservationNumber, formatDate, getPeopleLabel } =
-    useReservationConfirmationViewModel(reservationData);
+  const { 
+    reservationNumber, 
+    formatDate, 
+    getPeopleLabel,
+    hasReviewed,
+    checkingReview 
+  } = useReservationConfirmationViewModel(reservationData);
+
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  // ✅ LOGS DE DEBUG - VER QUÉ DATOS LLEGAN
+  console.log('🔍 ========== RESERVATION CONFIRMATION DEBUG ==========');
+  console.log('🔍 [reservationData]:', JSON.stringify(reservationData, null, 2));
+  console.log('🔍 [reservationId]:', reservationData.reservationId);
+  console.log('🔍 [restaurantId]:', reservationData.restaurantId);
+  console.log('🔍 [hasReviewed]:', hasReviewed);
+  console.log('🔍 [checkingReview]:', checkingReview);
+  console.log('🔍 ===================================================');
+
+  const handleReviewSubmitted = () => {
+    setShowReviewModal(false);
+  };
+
+  // ✅ VERIFICAR SI TENEMOS LOS DATOS MÍNIMOS PARA MOSTRAR EL BOTÓN
+  const canShowRateButton = reservationData.restaurantId && (reservationData.reservationId || reservationData.date);
+  
+  console.log('🔍 [canShowRateButton]:', canShowRateButton);
 
   return (
     <View style={styles.container}>
@@ -166,6 +193,45 @@ export function ReservationConfirmationScreen({
           </View>
         </View>
 
+        {/* ✅ SECCIÓN DE CALIFICACIÓN - MOSTRAR SIEMPRE PARA DEBUG */}
+        {canShowRateButton && !checkingReview && (
+          <View style={styles.rateSection}>
+            {!hasReviewed ? (
+              <TouchableOpacity
+                style={styles.rateButton}
+                onPress={() => {
+                  console.log('🔵 [BUTTON PRESSED] Abriendo modal de review');
+                  setShowReviewModal(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="star" size={24} color="#fff" />
+                <Text style={styles.rateButtonText}>Calificar Restaurante</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.ratedContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.ratedText}>Ya calificaste este restaurante</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ✅ DEBUG INFO - MOSTRAR SI NO HAY BOTÓN */}
+        {!canShowRateButton && (
+          <View style={styles.debugSection}>
+            <Text style={styles.debugText}>
+              ⚠️ DEBUG: Botón de calificación oculto
+            </Text>
+            <Text style={styles.debugText}>
+              restaurantId: {reservationData.restaurantId || 'FALTANTE'}
+            </Text>
+            <Text style={styles.debugText}>
+              reservationId: {reservationData.reservationId || 'FALTANTE'}
+            </Text>
+          </View>
+        )}
+
         {/* Aviso importante */}
         <View style={styles.noticeSection}>
           <Text style={styles.noticeText}>
@@ -178,6 +244,21 @@ export function ReservationConfirmationScreen({
         {/* Espacio para bottom nav */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ✅ MODAL DE CALIFICACIÓN */}
+      {canShowRateButton && (
+        <AddRestaurantReviewModal
+          visible={showReviewModal}
+          onClose={() => {
+            console.log('🔵 [MODAL] Cerrando modal');
+            setShowReviewModal(false);
+          }}
+          reservationId={reservationData.reservationId || `temp-${Date.now()}`}
+          restaurantId={reservationData.restaurantId!}
+          restaurantName={reservationData.restaurantName}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <BottomNav currentScreen="home" />
@@ -307,7 +388,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   detailsSection: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   detailRow: {
     flexDirection: 'row',
@@ -341,6 +422,58 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 14,
     lineHeight: 20,
+  },
+  rateSection: {
+    marginBottom: 24,
+  },
+  rateButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  rateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  ratedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#10B981',
+  },
+  ratedText: {
+    color: '#10B981',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  debugSection: {
+    backgroundColor: '#FEF3C7',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  debugText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontFamily: 'monospace',
+    marginBottom: 4,
   },
   noticeSection: {
     marginBottom: 24,

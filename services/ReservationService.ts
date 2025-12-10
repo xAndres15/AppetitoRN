@@ -19,6 +19,9 @@ export const ReservationService = {
           schedule: restaurant.schedule,
           cuisine: restaurant.cuisine,
           address: restaurant.address || restaurant.location,
+          rating: restaurant.rating,
+          totalReviews: restaurant.totalReviews,
+          ratingDistribution: restaurant.ratingDistribution,
         }));
         
         return { success: true, data: mappedRestaurants };

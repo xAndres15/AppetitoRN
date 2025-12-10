@@ -33,7 +33,9 @@ export default function MakeReservation() {
   };
 
   const handleReservationSuccess = (reservationData: any) => {
-    
+    // ✅ LOG DE LO QUE LLEGA
+  console.log('🟢 [RECEIVED DATA]:', JSON.stringify(reservationData, null, 2));
+  console.log('🟢 [restaurantId received]:', reservationData.restaurantId);
     // Intenta con diferentes formatos
     try {
       router.replace({
@@ -48,6 +50,7 @@ export default function MakeReservation() {
           restaurantName: String(reservationData.restaurantName),
           restaurantLocation: String(reservationData.restaurantLocation),
           reservationId: String(reservationData.reservationId || ''),
+          restaurantId: String(reservationData.restaurantId || ''),
         },
       });
     } catch (error) {

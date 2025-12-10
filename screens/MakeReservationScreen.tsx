@@ -61,6 +61,12 @@ export function MakeReservationScreen({
   };
 
   const onSubmit = async () => {
+    // ✅ LOGS DE DEBUG
+  console.log('🔵 ========== MAKE RESERVATION DEBUG ==========');
+  console.log('🔵 [restaurant]:', JSON.stringify(restaurant, null, 2));
+  console.log('🔵 [restaurant.firebaseId]:', restaurant.firebaseId);
+  console.log('🔵 [restaurant.id]:', restaurant.id);
+  console.log('🔵 =============================================');
     const result = await handleSubmit();
     if (result.success && result.data) {
       // Llamar al callback con todos los datos necesarios
@@ -74,6 +80,7 @@ export function MakeReservationScreen({
         restaurantName: restaurant.name,
         restaurantLocation: restaurant.location,
         reservationId: result.reservationId,
+        restaurantId: restaurant.firebaseId || restaurant.id,
       });
     }
   };

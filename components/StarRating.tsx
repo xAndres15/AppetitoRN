@@ -13,7 +13,7 @@ interface StarRatingProps {
   emptyColor?: string;
 }
 
-export function StarRating({
+export default function StarRating({
   rating,
   maxRating = 5,
   size = 24,

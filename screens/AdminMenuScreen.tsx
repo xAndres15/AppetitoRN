@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { AdminNavigation } from '../components/AdminNavigation';
 import { ImageWithFallback } from '../components/ImageWithFallback';
-import { StarRating } from '../components/StarRating';
+import StarRating from '../components/StarRating';
 import { Product } from '../lib/firebase';
 import { useAdminMenuViewModel } from '../viewmodels/AdminMenuViewModel';
 
