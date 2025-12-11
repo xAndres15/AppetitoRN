@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { auth, createProductReview, getUserData } from '../lib/firebase';
 import { ImageWithFallback } from './ImageWithFallback';
-import { StarRating } from './StarRating';
+import StarRating from './StarRating';
 
 // ✅ INTERFACE COMPLETAMENTE FLEXIBLE
 interface OrderItem {
